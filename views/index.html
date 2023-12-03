@@ -21,6 +21,16 @@
             }
         });
 
+        // Base64 to ArrayBuffer
+        function bufferDecode(value) {
+            const decoded = atob(value);
+            const array = new Uint8Array(decoded.length);
+            for (let i = 0; i < decoded.length; i++) {
+                array[i] = decoded.charCodeAt(i);
+            }
+            return array;
+        }
+
         function registerUser() {
             const username = document.getElementById("email").value;
             if (username === "") {
@@ -30,9 +40,16 @@
 
             fetch(`/register/begin/${username}`).then(function(response) {
                 return response.json();
-            }).then(function(credentialCreationOptions) {
-                console.log(credentialCreationOptions);
-            }).catch(function(err) {
+            }).then(credentialCreationOptions => {
+                credentialCreationOptions.publicKey.challenge = bufferDecode(credentialCreationOptions.publicKey.challenge);
+                credentialCreationOptions.publicKey.user.id = bufferDecode(credentialCreationOptions.publicKey.user.id);
+
+                return navigator.credentials.create({
+                    publicKey: credentialCreationOptions.publicKey
+                })
+            }).then(credential => {
+                console.log(credential)
+            }).catch(err => {
                 console.warn("Something went wrong.", err);
             })
         }
