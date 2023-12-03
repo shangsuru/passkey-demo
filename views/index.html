@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>PassKey Demo</title>
+</head>
+
+<body>
+    <label for="email">Email:</label>
+    <input type="text" name="username" id="email" placeholder="Enter your email">
+    <br>
+    <br>
+    <button onclick="registerUser()">Register</button>
+    <button onclick="loginUser()">Login</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!window.PublicKeyCredential) {
+                alert("Error: this browser does not support WebAuthn");
+            }
+        });
+
+        function registerUser() {
+            const username = document.getElementById("email").value;
+            if (username === "") {
+                alert("Please enter a username");
+                return;
+            }
+
+            fetch(`/register/begin/${username}`).then(function(response) {
+                return response.json();
+            }).then(function(credentialCreationOptions) {
+                console.log(credentialCreationOptions);
+            }).catch(function(err) {
+                console.warn("Something went wrong.", err);
+            })
+        }
+
+        function loginUser() {
+            alert("login not yet implemented");
+        }
+    </script>
+</body>
+</html>
