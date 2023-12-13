@@ -59,12 +59,51 @@ func BeginRegistration(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
+func FinishRegistration(c *gin.Context) {
+	username := c.Param("username")
+	// get user
+	user, err := userStore.GetUser(username)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// load the session data
+	session := sessions.Default(c)
+	bytes := session.Get("registration").([]byte)
+	var sessionData webauthn.SessionData
+	err = json.Unmarshal(bytes, &sessionData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+
+	credential, err := webAuthn.FinishRegistration(user, sessionData, c.Request)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	user.AddCredential(*credential)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Registration Success",
+	})
+}
+
 func main() {
 	var err error
 	webAuthn, err = webauthn.New(&webauthn.Config{
 		RPDisplayName: "PassKey Demo",
 		RPID:          "localhost",
-		RPOrigins:     []string{"localhost"},
+		RPOrigins:     []string{"http://localhost:8080"},
 	})
 
 	if err != nil {
@@ -93,6 +132,7 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
 	r.GET("/register/begin/:username", BeginRegistration)
+	r.POST("/register/finish/:username", FinishRegistration)
 
 	_ = r.Run() // listen and serve on 0.0.0.0:8080
 }
