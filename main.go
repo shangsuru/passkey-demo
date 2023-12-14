@@ -138,6 +138,45 @@ func BeginLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
+func FinishLogin(c *gin.Context) {
+	username := c.Param("username")
+	user, err := userStore.GetUser(username)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// load the session data
+	session := sessions.Default(c)
+	bytes := session.Get(username).([]byte)
+	var sessionData webauthn.SessionData
+	err = json.Unmarshal(bytes, &sessionData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+
+	// in an actual implementation we should perform additional
+	// checks on the returned 'credential'
+	_, err = webAuthn.FinishLogin(user, sessionData, c.Request)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// handle successful login
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login Success",
+	})
+}
+
 func main() {
 	var err error
 	webAuthn, err = webauthn.New(&webauthn.Config{
@@ -174,6 +213,7 @@ func main() {
 	r.GET("/register/begin/:username", BeginRegistration)
 	r.POST("/register/finish/:username", FinishRegistration)
 	r.GET("/login/begin/:username", BeginLogin)
+	r.POST("/login/finish/:username", FinishLogin)
 
 	_ = r.Run() // listen and serve on 0.0.0.0:8080
 }

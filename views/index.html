@@ -23,8 +23,7 @@
 
         // Base64 to ArrayBuffer
         function bufferDecode(value) {
-            value = value .replace(/-/g, "+")
-                .replace(/_/g, "/")
+            value = value.replace(/-/g, "+").replace(/_/g, "/")
             return Uint8Array.from(atob(value), c => c.charCodeAt(0));
         }
 
@@ -58,7 +57,7 @@
                 let rawId = credential.rawId;
 
                 fetch(`/register/finish/${username}`, {
-                    method: 'POST',
+                    method: "POST",
                     body: JSON.stringify({
                         id: credential.id,
                         rawId: bufferEncode(rawId),
@@ -69,7 +68,7 @@
                         },
                     }),
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json"
                     }
                 })
             }).then(() => {
@@ -99,8 +98,34 @@
                     publicKey: credentialRequestOptions.publicKey
                 })
             }).then(assertion => {
-                // TODO
-                console.log(assertion)
+                let authData = assertion.response.authenticatorData;
+                let clientDataJSON = assertion.response.clientDataJSON;
+                let rawId = assertion.rawId;
+                let sig = assertion.response.signature;
+                let userHandle = assertion.response.userHandle;
+
+                fetch(`/login/finish/${username}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        id: assertion.id,
+                        rawId: bufferEncode(rawId),
+                        type: assertion.type,
+                        response: {
+                            authenticatorData: bufferEncode(authData),
+                            clientDataJSON: bufferEncode(clientDataJSON),
+                            signature: bufferEncode(sig),
+                            userHandle: bufferEncode(userHandle),
+                        },
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+            }).then(() => {
+                alert("Successfully logged in " + username + "!")
+            }).catch((error) => {
+                console.log(error)
+                alert("Failed to register " + username)
             })
         }
     </script>
