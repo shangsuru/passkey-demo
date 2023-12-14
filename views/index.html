@@ -90,8 +90,17 @@
             fetch(`/login/begin/${username}`).then(function(response) {
                 return response.json();
             }).then(credentialRequestOptions => {
+                credentialRequestOptions.publicKey.challenge = bufferDecode(credentialRequestOptions.publicKey.challenge);
+                credentialRequestOptions.publicKey.allowCredentials.forEach(function (listItem) {
+                    listItem.id = bufferDecode(listItem.id)
+                });
+
+                return navigator.credentials.get({
+                    publicKey: credentialRequestOptions.publicKey
+                })
+            }).then(assertion => {
                 // TODO
-                console.log(credentialRequestOptions)
+                console.log(assertion)
             })
         }
     </script>
