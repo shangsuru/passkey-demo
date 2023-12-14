@@ -48,7 +48,7 @@ func BeginRegistration(c *gin.Context) {
 			"error": err.Error(),
 		})
 	}
-	session.Set("registration", bytes)
+	session.Set(username, bytes)
 	err = session.Save()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,7 +73,7 @@ func FinishRegistration(c *gin.Context) {
 
 	// load the session data
 	session := sessions.Default(c)
-	bytes := session.Get("registration").([]byte)
+	bytes := session.Get(username).([]byte)
 	var sessionData webauthn.SessionData
 	err = json.Unmarshal(bytes, &sessionData)
 	if err != nil {
@@ -96,6 +96,46 @@ func FinishRegistration(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Registration Success",
 	})
+}
+
+func BeginLogin(c *gin.Context) {
+	username := c.Param("username")
+	user, err := userStore.GetUser(username)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// generate PublicKeyCredentialRequestOptions, session data
+	options, sessionData, err := webAuthn.BeginLogin(user)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// store session data as marshaled JSON
+	session := sessions.Default(c)
+	bytes, err := json.Marshal(sessionData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+	session.Set(username, bytes)
+	err = session.Save()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+
+	c.JSON(http.StatusOK, options)
 }
 
 func main() {
@@ -133,6 +173,7 @@ func main() {
 	})
 	r.GET("/register/begin/:username", BeginRegistration)
 	r.POST("/register/finish/:username", FinishRegistration)
+	r.GET("/login/begin/:username", BeginLogin)
 
 	_ = r.Run() // listen and serve on 0.0.0.0:8080
 }
