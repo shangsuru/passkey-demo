@@ -1,16 +1,16 @@
 package main
 
 import (
-	"encoding/json"
+	"log"
+	"net/http"
+	"strings"
+
 	"github.com/gin-contrib/sessions"
 	gormsessions "github.com/gin-contrib/sessions/gorm"
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
-	"strings"
 )
 
 var webAuthn *webauthn.WebAuthn
@@ -40,20 +40,11 @@ func BeginRegistration(c *gin.Context) {
 		return
 	}
 
-	// store session data as marshaled JSON
-	session := sessions.Default(c)
-	bytes, err := json.Marshal(sessionData)
-	if err != nil {
+	if err := StoreSessionData(c, username, sessionData); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
-	}
-	session.Set(username, bytes)
-	err = session.Save()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		return
 	}
 
 	c.JSON(http.StatusOK, options)
@@ -71,18 +62,14 @@ func FinishRegistration(c *gin.Context) {
 		return
 	}
 
-	// load the session data
-	session := sessions.Default(c)
-	bytes := session.Get(username).([]byte)
-	var sessionData webauthn.SessionData
-	err = json.Unmarshal(bytes, &sessionData)
+	sessionData, err := LoadSessionData(c, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 	}
 
-	credential, err := webAuthn.FinishRegistration(user, sessionData, c.Request)
+	credential, err := webAuthn.FinishRegistration(user, *sessionData, c.Request)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -119,20 +106,11 @@ func BeginLogin(c *gin.Context) {
 		return
 	}
 
-	// store session data as marshaled JSON
-	session := sessions.Default(c)
-	bytes, err := json.Marshal(sessionData)
-	if err != nil {
+	if err := StoreSessionData(c, username, sessionData); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
-	}
-	session.Set(username, bytes)
-	err = session.Save()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		return
 	}
 
 	c.JSON(http.StatusOK, options)
@@ -149,11 +127,7 @@ func FinishLogin(c *gin.Context) {
 		return
 	}
 
-	// load the session data
-	session := sessions.Default(c)
-	bytes := session.Get(username).([]byte)
-	var sessionData webauthn.SessionData
-	err = json.Unmarshal(bytes, &sessionData)
+	sessionData, err := LoadSessionData(c, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -162,7 +136,7 @@ func FinishLogin(c *gin.Context) {
 
 	// in an actual implementation we should perform additional
 	// checks on the returned 'credential'
-	_, err = webAuthn.FinishLogin(user, sessionData, c.Request)
+	_, err = webAuthn.FinishLogin(user, *sessionData, c.Request)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
