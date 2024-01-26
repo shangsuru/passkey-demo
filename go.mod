@@ -1,4 +1,4 @@
-module passkeys
+module github.com/shangsuru/passkey-demo
 
 go 1.21
 

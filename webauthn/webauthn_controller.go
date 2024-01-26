@@ -1,9 +1,10 @@
-package controllers
+package webauthn
 
 import (
 	"log"
 	"net/http"
-	"strings"
+
+	"github.com/shangsuru/passkey-demo/users"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -17,7 +18,7 @@ type WebAuthnController interface {
 }
 
 type webAuthnController struct {
-	userStore *UserDB
+	userStore users.UserRepository
 	webAuthn *webauthn.WebAuthn
 }
 
@@ -32,7 +33,7 @@ func NewWebAuthnController() WebAuthnController {
 		log.Fatal("failed to create WebAuthn from config:", err)
 	}
 	return webAuthnController {
-		userStore: DB(),
+		userStore: users.NewUserRepository(),
 		webAuthn: webAuthn,
 	}
 }
@@ -44,9 +45,7 @@ func (wc webAuthnController) BeginRegistration(c *gin.Context) {
 	user, err := wc.userStore.GetUser(username)
 	// user doesn't exist, create new user
 	if err != nil {
-		displayName := strings.Split(username, "@")[0]
-		user = NewUser(username, displayName)
-		wc.userStore.PutUser(user)
+		wc.userStore.PutUser(username)
 	}
 
 	// generate PublicKeyCredentialCreationOptions, session data

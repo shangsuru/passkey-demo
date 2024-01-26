@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"passkeys/controllers"
+	"github.com/shangsuru/passkey-demo/webauthn"
 
 	"github.com/gin-contrib/sessions"
 	gormsessions "github.com/gin-contrib/sessions/gorm"
@@ -26,8 +26,8 @@ func main() {
 	r.Use(sessions.Sessions("mySession", sessionStore))
 
 	// Routes
-	r.Static("/static", "./views")
-	r.LoadHTMLGlob("views/html/*")
+	r.Static("/static", "./frontend")
+	r.LoadHTMLGlob("frontend/html/*")
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", gin.H{})
 	})
@@ -35,7 +35,7 @@ func main() {
 		c.HTML(http.StatusOK, "home.html", gin.H{})
 	})
 
-	webAuthnController := controllers.NewWebAuthnController()
+	webAuthnController := webauthn.NewWebAuthnController()
 	r.GET("/register/begin/:username", webAuthnController.BeginRegistration)
 	r.POST("/register/finish/:username", webAuthnController.FinishRegistration)
 	r.GET("/login/begin/:username", webAuthnController.BeginLogin)
