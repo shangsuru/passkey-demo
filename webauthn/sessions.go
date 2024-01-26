@@ -9,7 +9,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 )
 
-func LoadSessionData(c *gin.Context, username string) (*webauthn.SessionData, error) {
+func loadSessionData(c *gin.Context, username string) (*webauthn.SessionData, error) {
 	session := sessions.Default(c)
 
 	// Get session data bytes from the session
@@ -25,7 +25,7 @@ func LoadSessionData(c *gin.Context, username string) (*webauthn.SessionData, er
 	return &sessionData, nil
 }
 
-func StoreSessionData(c *gin.Context, username string, sessionData *webauthn.SessionData) error {
+func storeSessionData(c *gin.Context, username string, sessionData *webauthn.SessionData) error {
 	session := sessions.Default(c)
 
 	// Marhsall session data to JSON

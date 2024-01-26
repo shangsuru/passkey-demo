@@ -58,7 +58,7 @@ func (wc webAuthnController) BeginRegistration(c *gin.Context) {
 		return
 	}
 
-	if err := StoreSessionData(c, username, sessionData); err != nil {
+	if err := storeSessionData(c, username, sessionData); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -80,7 +80,7 @@ func (wc webAuthnController) FinishRegistration(c *gin.Context) {
 		return
 	}
 
-	sessionData, err := LoadSessionData(c, username)
+	sessionData, err := loadSessionData(c, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -124,7 +124,7 @@ func (wc webAuthnController) BeginLogin(c *gin.Context) {
 		return
 	}
 
-	if err := StoreSessionData(c, username, sessionData); err != nil {
+	if err := storeSessionData(c, username, sessionData); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
@@ -145,7 +145,7 @@ func (wc webAuthnController) FinishLogin(c *gin.Context) {
 		return
 	}
 
-	sessionData, err := LoadSessionData(c, username)
+	sessionData, err := loadSessionData(c, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

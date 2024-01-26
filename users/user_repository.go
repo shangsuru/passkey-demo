@@ -38,5 +38,5 @@ func (db *userRepository) PutUser(username string) {
 	user := NewUser(username, displayName)
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	db.users[user.WebAuthnName()] = user
+	db.users[user.name] = user
 }
