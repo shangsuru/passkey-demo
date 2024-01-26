@@ -1,8 +1,7 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/shangsuru/passkey-demo/routes"
 	"github.com/shangsuru/passkey-demo/webauthn"
 
 	"github.com/gin-contrib/sessions"
@@ -24,22 +23,11 @@ func main() {
 
 	r := gin.Default()
 	r.Use(sessions.Sessions("mySession", sessionStore))
-
-	// Routes
-	r.Static("/static", "./frontend")
-	r.LoadHTMLGlob("frontend/html/*")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", gin.H{})
-	})
-	r.GET("/home", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home.html", gin.H{})
-	})
-
+ 
+	// Route Setup
+	routes.SetupFrontendRoutes(r)
 	webAuthnController := webauthn.NewWebAuthnController()
-	r.GET("/register/begin/:username", webAuthnController.BeginRegistration)
-	r.POST("/register/finish/:username", webAuthnController.FinishRegistration)
-	r.GET("/login/begin/:username", webAuthnController.BeginLogin)
-	r.POST("/login/finish/:username", webAuthnController.FinishLogin)
-
+	webAuthnRouteController := routes.NewWebAuthnRouteController(webAuthnController)
+	webAuthnRouteController.WebAuthnRoutes(r)
 	_ = r.Run()
 }
