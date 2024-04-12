@@ -7,8 +7,8 @@ import (
 )
 
 func SetupFrontendRoutes(r *gin.Engine) {
-	r.Static("/static", "./frontend")
-	r.LoadHTMLGlob("frontend/html/*")
+	r.Static("/static", "../frontend")
+	r.LoadHTMLGlob("../frontend/html/*")
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", gin.H{})
 	})
@@ -16,3 +16,4 @@ func SetupFrontendRoutes(r *gin.Engine) {
 		c.HTML(http.StatusOK, "home.html", gin.H{})
 	})
 }
+
