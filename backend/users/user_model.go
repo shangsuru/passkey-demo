@@ -21,7 +21,7 @@ func NewUser(name string, displayName string) *User {
 	user.id = randomUint64()
 	user.name = name
 	user.displayName = displayName
-	// user.credentials = []webauthn.Credential{}
+	user.credentials = []webauthn.Credential{}
 	return user
 }
 

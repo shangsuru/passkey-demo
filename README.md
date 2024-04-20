@@ -1,3 +1,8 @@
-An implementation of login with passkeys using the [go-webauthn](github.com/go-webauthn/webauthn) library
+An implementation of authentication with passkeys using the [go-webauthn](https://github.com/go-webauthn/webauthn) library
 
-`go run .`
+## Local Setup
+
+```
+docker compose up -d
+go run .
+```

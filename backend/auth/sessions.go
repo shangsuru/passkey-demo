@@ -1,47 +1,50 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/redis/go-redis/v9"
 )
 
-func loadSessionData(c *gin.Context, username string) (*webauthn.SessionData, error) {
-	session := sessions.Default(c)
+const duration time.Duration = 5 * time.Minute
 
-	// Get session data bytes from the session
-	bytes := session.Get(username).([]byte)
+var sessionStore *redis.Client
 
-	// Unmarshal session data from JSON
-	var sessionData webauthn.SessionData
-	if err := json.Unmarshal(bytes, &sessionData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal session data: %v", err)
-	}
-
-	// Return session data and nil error if everything is successful
-	return &sessionData, nil
+func init() {
+	sessionStore = redis.NewClient(&redis.Options{
+		Addr:     "localhost:16379",
+		Password: "",
+		DB:       0,
+	})
 }
 
-func storeSessionData(c *gin.Context, username string, sessionData *webauthn.SessionData) error {
-	session := sessions.Default(c)
-
-	// Marhsall session data to JSON
-	bytes, err := json.Marshal(sessionData)
+func GetSession(ctx context.Context, username string) (*webauthn.SessionData, error) {
+	bytes, err := sessionStore.Get(ctx, username).Bytes()
 	if err != nil {
-		return fmt.Errorf("failed to marhsall session data: %v", err)
+		return nil, fmt.Errorf("failed to get session: %v", err)
 	}
 
-	// Set session data for the user
-	session.Set(username, bytes)
+	var data *webauthn.SessionData
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to decode session data: %v", err)
+	}
 
-	// Save the session
-	if err = session.Save(); err != nil {
+	return data, nil
+}
+
+func CreateSession(ctx context.Context, username string, data *webauthn.SessionData) error {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to encode session data: %v", err)
+	}
+
+	if err := sessionStore.Set(ctx, username, bytes, duration).Err(); err != nil {
 		return fmt.Errorf("failed to save session: %v", err)
 	}
 
-	// Return nil if everything is successful
 	return nil
 }

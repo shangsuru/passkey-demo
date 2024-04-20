@@ -7,7 +7,7 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/shangsuru/passkey-demo/auth"
 	"github.com/shangsuru/passkey-demo/users"
 )
@@ -15,7 +15,7 @@ import (
 // Injectors from wire.go:
 
 func NewServer() (*Server, error) {
-	engine := gin.Default()
+	echoEcho := echo.New()
 	userRepository := users.NewUserRepository()
 	webAuthn, err := auth.NewWebAuthnAPI()
 	if err != nil {
@@ -26,7 +26,7 @@ func NewServer() (*Server, error) {
 		WebAuthnAPI: webAuthn,
 	}
 	server := &Server{
-		router:             engine,
+		router:             echoEcho,
 		webAuthnController: webAuthnController,
 	}
 	return server, nil
