@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/sessions"
 	gormsessions "github.com/gin-contrib/sessions/gorm"
@@ -19,15 +21,14 @@ type Server struct {
 
 func (s *Server) Start() {
 	// Database Setup
-	db, err := gorm.Open(sqlite.Open("db/test.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("db/%s.db", os.Getenv("DB_NAME"))), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
 
 	// Session
-	sessionStore := gormsessions.NewStore(db, true, []byte("secret"))
-
-	s.router.Use(sessions.Sessions("mySession", sessionStore))
+	sessionStore := gormsessions.NewStore(db, true, []byte(os.Getenv("SESSION_SECRET")))
+	s.router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), sessionStore))
 
 	// Route Setup
 	s.registerEndpoints()
