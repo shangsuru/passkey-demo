@@ -1,4 +1,4 @@
-package webauthn
+package auth
 
 import (
 	"encoding/json"
@@ -31,7 +31,7 @@ func storeSessionData(c *gin.Context, username string, sessionData *webauthn.Ses
 	// Marhsall session data to JSON
 	bytes, err := json.Marshal(sessionData)
 	if err != nil {
-		return fmt.Errorf("failed to marhsall session data: %v", err)	
+		return fmt.Errorf("failed to marhsall session data: %v", err)
 	}
 
 	// Set session data for the user

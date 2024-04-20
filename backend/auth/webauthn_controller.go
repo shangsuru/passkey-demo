@@ -1,55 +1,32 @@
-package webauthn
+package auth
 
 import (
 	"log"
 	"net/http"
 
-	"github.com/shangsuru/passkey-demo/users"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/webauthn"
+
+	"github.com/shangsuru/passkey-demo/users"
 )
 
-type WebAuthnController interface {
-	BeginRegistration(c *gin.Context)
-	FinishRegistration(c *gin.Context)
-	BeginLogin(c *gin.Context)
-	FinishLogin(c *gin.Context)
+type WebAuthnController struct {
+	UserStore   users.UserRepository
+	WebAuthnAPI *webauthn.WebAuthn
 }
 
-type webAuthnController struct {
-	userStore users.UserRepository
-	webAuthn *webauthn.WebAuthn
-}
-
-func NewWebAuthnController() WebAuthnController {
-	webAuthn, err := webauthn.New(&webauthn.Config{
-		RPDisplayName: "PassKey Demo",
-		RPID:          "localhost",
-		RPOrigins:     []string{"http://localhost:8080"},
-	})
-
-	if err != nil {
-		log.Fatal("failed to create WebAuthn from config:", err)
-	}
-	return webAuthnController {
-		userStore: users.NewUserRepository(),
-		webAuthn: webAuthn,
-	}
-}
-
-func (wc webAuthnController) BeginRegistration(c *gin.Context) {
+func (wc WebAuthnController) BeginRegistration(c *gin.Context) {
 	username := c.Param("username")
 
 	// get user
-	user, err := wc.userStore.GetUser(username)
+	user, err := wc.UserStore.GetUser(username)
 	// user doesn't exist, create new user
 	if err != nil {
-		wc.userStore.PutUser(username)
+		wc.UserStore.PutUser(username)
 	}
 
 	// generate PublicKeyCredentialCreationOptions, session data
-	options, sessionData, err := wc.webAuthn.BeginRegistration(user)
+	options, sessionData, err := wc.WebAuthnAPI.BeginRegistration(user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -68,10 +45,10 @@ func (wc webAuthnController) BeginRegistration(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (wc webAuthnController) FinishRegistration(c *gin.Context) {
+func (wc WebAuthnController) FinishRegistration(c *gin.Context) {
 	username := c.Param("username")
 	// get user
-	user, err := wc.userStore.GetUser(username)
+	user, err := wc.UserStore.GetUser(username)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -82,12 +59,13 @@ func (wc webAuthnController) FinishRegistration(c *gin.Context) {
 
 	sessionData, err := loadSessionData(c, username)
 	if err != nil {
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 	}
 
-	credential, err := wc.webAuthn.FinishRegistration(user, *sessionData, c.Request)
+	credential, err := wc.WebAuthnAPI.FinishRegistration(user, *sessionData, c.Request)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -103,9 +81,9 @@ func (wc webAuthnController) FinishRegistration(c *gin.Context) {
 	})
 }
 
-func (wc webAuthnController) BeginLogin(c *gin.Context) {
+func (wc WebAuthnController) BeginLogin(c *gin.Context) {
 	username := c.Param("username")
-	user, err := wc.userStore.GetUser(username)
+	user, err := wc.UserStore.GetUser(username)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -115,7 +93,7 @@ func (wc webAuthnController) BeginLogin(c *gin.Context) {
 	}
 
 	// generate PublicKeyCredentialRequestOptions, session data
-	options, sessionData, err := wc.webAuthn.BeginLogin(user)
+	options, sessionData, err := wc.WebAuthnAPI.BeginLogin(user)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -134,9 +112,9 @@ func (wc webAuthnController) BeginLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, options)
 }
 
-func (wc webAuthnController) FinishLogin(c *gin.Context) {
+func (wc WebAuthnController) FinishLogin(c *gin.Context) {
 	username := c.Param("username")
-	user, err := wc.userStore.GetUser(username)
+	user, err := wc.UserStore.GetUser(username)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -154,7 +132,7 @@ func (wc webAuthnController) FinishLogin(c *gin.Context) {
 
 	// in an actual implementation we should perform additional
 	// checks on the returned 'credential'
-	_, err = wc.webAuthn.FinishLogin(user, *sessionData, c.Request)
+	_, err = wc.WebAuthnAPI.FinishLogin(user, *sessionData, c.Request)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{

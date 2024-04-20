@@ -1,33 +1,13 @@
 package main
 
 import (
-	"github.com/shangsuru/passkey-demo/routes"
-	"github.com/shangsuru/passkey-demo/webauthn"
-
-	"github.com/gin-contrib/sessions"
-	gormsessions "github.com/gin-contrib/sessions/gorm"
-	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"log"
 )
 
 func main() {
-	// Database Setup
-	db, err := gorm.Open(sqlite.Open("db/test.db"), &gorm.Config{})
+	s, err := NewServer()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-
-	// Session
-	sessionStore := gormsessions.NewStore(db, true, []byte("secret"))
-
-	r := gin.Default()
-	r.Use(sessions.Sessions("mySession", sessionStore))
- 
-	// Route Setup
-	routes.SetupFrontendRoutes(r)
-	webAuthnController := webauthn.NewWebAuthnController()
-	webAuthnRouteController := routes.NewWebAuthnRouteController(webAuthnController)
-	webAuthnRouteController.WebAuthnRoutes(r)
-	_ = r.Run()
+	s.Start()
 }
