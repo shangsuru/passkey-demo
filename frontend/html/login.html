@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -7,12 +7,15 @@
   </head>
 
   <body>
-    <label for="email">Email:</label>
+    <div class="header">
+      <h1>Passkey Demo</h1>
+    </div>
+    <label for="username">Username:</label>
     <input
       type="text"
       name="username"
-      id="email"
-      placeholder="Enter your email"
+      id="username"
+      placeholder="Enter your username"
     />
     <br />
     <br />
@@ -41,9 +44,9 @@
       }
 
       function registerUser() {
-        const username = document.getElementById("email").value;
+        const username = document.getElementById("username").value;
         if (username === "") {
-          alert("Please enter your email");
+          alert("Please enter your username");
           return;
         }
 
@@ -53,10 +56,10 @@
           })
           .then((credentialCreationOptions) => {
             credentialCreationOptions.publicKey.challenge = bufferDecode(
-              credentialCreationOptions.publicKey.challenge
+              credentialCreationOptions.publicKey.challenge,
             );
             credentialCreationOptions.publicKey.user.id = bufferDecode(
-              credentialCreationOptions.publicKey.user.id
+              credentialCreationOptions.publicKey.user.id,
             );
 
             return navigator.credentials.create({
@@ -94,9 +97,9 @@
       }
 
       function loginUser() {
-        const username = document.getElementById("email").value;
+        const username = document.getElementById("username").value;
         if (username === "") {
-          alert("Please enter your email");
+          alert("Please enter your username");
           return;
         }
 
@@ -106,12 +109,12 @@
           })
           .then((credentialRequestOptions) => {
             credentialRequestOptions.publicKey.challenge = bufferDecode(
-              credentialRequestOptions.publicKey.challenge
+              credentialRequestOptions.publicKey.challenge,
             );
             credentialRequestOptions.publicKey.allowCredentials.forEach(
               function (listItem) {
                 listItem.id = bufferDecode(listItem.id);
-              }
+              },
             );
 
             return navigator.credentials.get({
