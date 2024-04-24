@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/shangsuru/passkey-demo/auth"
+	"github.com/shangsuru/passkey-demo/db"
 	"github.com/shangsuru/passkey-demo/users"
 )
 
@@ -16,7 +17,10 @@ import (
 
 func NewServer() (*Server, error) {
 	echoEcho := echo.New()
-	userRepository := users.NewUserRepository()
+	bunDB := db.GetDB()
+	userRepository := users.UserRepository{
+		DB: bunDB,
+	}
 	webAuthn, err := auth.NewWebAuthnAPI()
 	if err != nil {
 		return nil, err

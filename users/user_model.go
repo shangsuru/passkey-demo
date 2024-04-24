@@ -1,64 +1,63 @@
 package users
 
 import (
-	"crypto/rand"
-	"encoding/binary"
+	"time"
 
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/google/uuid"
 )
 
-// User represents the user model
+// https://github.com/go-webauthn/webauthn/blob/master/webauthn/credential.go
+type WebauthnCredentials struct {
+	ID              uuid.UUID                         `json:"id" bun:"id,pk"`
+	UserID          uuid.UUID                         `json:"user_id" bun:"user_id"`
+	CredentialID    []byte                            `json:"credential_id" bun:"credential_id"`
+	PublicKey       []byte                            `json:"public_key" bun:"public_key"`
+	AttestationType string                            `json:"attestation_type" bun:"attestation_type"`
+	Transport       []protocol.AuthenticatorTransport `json:"transport" bun:"transport,array"`
+	Flags           webauthn.CredentialFlags          `json:"flags" bun:"flags"`
+	Authenticator   webauthn.Authenticator            `json:"authenticator" bun:"authenticator"`
+}
+
 type User struct {
-	id          uint64
-	name        string
-	displayName string
-	credentials []webauthn.Credential
+	ID                  uuid.UUID             `json:"id" bun:"id,pk"`
+	Name                string                `json:"name" bun:"name"`
+	WebauthnCredentials []WebauthnCredentials `json:"webauthn_credentials" bun:"rel:has-many,join:id=user_id"`
+	CreatedAt           time.Time             `json:"created_at" bun:"created_at"`
+	UpdatedAt           time.Time             `json:"updated_at" bun:"updated_at"`
 }
 
-// NewUser creates and returns a new User
-func NewUser(name string, displayName string) *User {
-	user := &User{}
-	user.id = randomUint64()
-	user.name = name
-	user.displayName = displayName
-	user.credentials = []webauthn.Credential{}
-	return user
-}
-
-func randomUint64() uint64 {
-	buf := make([]byte, 8)
-	_, _ = rand.Read(buf)
-	return binary.LittleEndian.Uint64(buf)
-}
-
-// WebAuthnID returns the user's ID
 func (u *User) WebAuthnID() []byte {
-	buf := make([]byte, binary.MaxVarintLen64)
-	binary.PutUvarint(buf, uint64(u.id))
-	return buf
+	bytes, _ := u.ID.MarshalBinary()
+	return bytes
 }
 
-// WebAuthnName returns the user's username
 func (u *User) WebAuthnName() string {
-	return u.name
+	return u.Name
 }
 
-// WebAuthnDisplayName returns the user's display name
 func (u *User) WebAuthnDisplayName() string {
-	return u.displayName
+	return u.Name
 }
 
-// WebAuthnIcon is not (yet) implemented
 func (u *User) WebAuthnIcon() string {
 	return ""
 }
 
-// AddCredential associates the credential to the user
-func (u *User) AddCredential(cred webauthn.Credential) {
-	u.credentials = append(u.credentials, cred)
-}
-
-// WebAuthnCredentials returns credentials owned by the user
 func (u *User) WebAuthnCredentials() []webauthn.Credential {
-	return u.credentials
+	credentials := make([]webauthn.Credential, len(u.WebauthnCredentials))
+
+	for i, v := range u.WebauthnCredentials {
+		credentials[i] = webauthn.Credential{
+			ID:              v.CredentialID,
+			PublicKey:       v.PublicKey,
+			AttestationType: v.AttestationType,
+			Transport:       v.Transport,
+			Flags:           v.Flags,
+			Authenticator:   v.Authenticator,
+		}
+	}
+
+	return credentials
 }

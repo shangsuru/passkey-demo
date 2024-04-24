@@ -1,38 +1,63 @@
 package users
 
 import (
-	"fmt"
-	"strings"
-	"sync"
+	"context"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type UserRepository struct {
-	users map[string]*User
-	mu    *sync.RWMutex
+	DB *bun.DB
 }
 
-func NewUserRepository() UserRepository {
-	return UserRepository{
-		users: make(map[string]*User),
-		mu:    &sync.RWMutex{},
+func (ur *UserRepository) FindUserByName(ctx context.Context, name string) (*User, error) {
+	var user User
+	err := ur.DB.NewSelect().
+		Model(&user).
+		Relation("WebauthnCredentials").
+		Column("*").
+		Where("name = ?", name).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	return &user, nil
 }
 
-func (db *UserRepository) GetUser(name string) (*User, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	user, ok := db.users[name]
-	if !ok {
-		return &User{}, fmt.Errorf("error getting user '%s': does not exist", name)
+func (ur *UserRepository) CreateUser(ctx context.Context, name string) (*User, error) {
+	user := &User{
+		Name: name,
+	}
+
+	_, err := ur.DB.NewInsert().Model(user).Column("name").Returning("*").Exec(ctx, user)
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil
 }
 
-func (db *UserRepository) PutUser(username string) {
-	displayName := strings.Split(username, "@")[0]
-	user := NewUser(username, displayName)
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	db.users[user.name] = user
+func (ur *UserRepository) AddWebauthnCredential(ctx context.Context, userID uuid.UUID, credential *webauthn.Credential) error {
+	newWebautnCredential := &WebauthnCredentials{
+		UserID:          userID,
+		CredentialID:    credential.ID,
+		PublicKey:       credential.PublicKey,
+		AttestationType: credential.AttestationType,
+		Transport:       credential.Transport,
+		Flags:           credential.Flags,
+		Authenticator:   credential.Authenticator,
+	}
+
+	_, err := ur.DB.NewInsert().
+		Model(newWebautnCredential).
+		Column("user_id", "credential_id", "public_key", "attestation_type", "transport", "flags", "authenticator").
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

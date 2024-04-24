@@ -18,9 +18,12 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		username := ctx.Param("username")
 
-		user, err := wc.UserStore.GetUser(username)
+		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
 		if err != nil {
-			wc.UserStore.PutUser(username)
+			user, err = wc.UserStore.CreateUser(ctx.Request().Context(), username)
+			if err != nil {
+				return ctx.JSON(http.StatusInternalServerError, err.Error())
+			}
 		}
 
 		options, sessionData, err := wc.WebAuthnAPI.BeginRegistration(user)
@@ -40,7 +43,7 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		username := ctx.Param("username")
-		user, err := wc.UserStore.GetUser(username)
+		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -58,7 +61,10 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 			return ctx.JSON(http.StatusBadRequest, err.Error())
 		}
 
-		user.AddCredential(*credential)
+		if err := wc.UserStore.AddWebauthnCredential(ctx.Request().Context(), user.ID, credential); err != nil {
+			ctx.Logger().Error(err)
+			return ctx.JSON(http.StatusInternalServerError, err.Error())
+		}
 
 		return ctx.JSON(http.StatusOK, nil)
 	}
@@ -67,7 +73,7 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		username := ctx.Param("username")
-		user, err := wc.UserStore.GetUser(username)
+		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, err.Error())
@@ -90,7 +96,7 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		username := ctx.Param("username")
-		user, err := wc.UserStore.GetUser(username)
+		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, err.Error())

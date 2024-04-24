@@ -7,7 +7,8 @@ import (
 	"github.com/google/wire"
 	"github.com/labstack/echo/v4"
 
-	auth "github.com/shangsuru/passkey-demo/auth"
+	"github.com/shangsuru/passkey-demo/auth"
+	"github.com/shangsuru/passkey-demo/db"
 	"github.com/shangsuru/passkey-demo/users"
 )
 
@@ -16,7 +17,8 @@ func NewServer() (*Server, error) {
 		wire.Struct(new(Server), "*"),
 		echo.New,
 		wire.Struct(new(auth.WebAuthnController), "*"),
-		users.NewUserRepository,
+		wire.Struct(new(users.UserRepository), "*"),
+		db.GetDB,
 		auth.NewWebAuthnAPI,
 	))
 }
