@@ -20,7 +20,7 @@ function registerUser() {
   }
 
   fetch(`/register/begin/${username}`)
-    .then(function(response) {
+    .then(function (response) {
       return response.json();
     })
     .then((credentialCreationOptions) => {
@@ -65,11 +65,13 @@ function registerUser() {
       });
     })
     .then(() => {
-      alert(`Successfully registered ${username}!`);
+      document.getElementById("notification").innerHTML =
+        "Successfully registered.";
     })
     .catch((err) => {
       console.warn(err);
-      alert(`Failed to register ${username}`);
+      document.getElementById("notification").innerHTML =
+        "Registration failed.";
     });
 }
 
@@ -81,7 +83,7 @@ function loginUser() {
   }
 
   fetch(`/login/begin/${username}`)
-    .then(function(response) {
+    .then(function (response) {
       return response.json();
     })
     .then((credentialRequestOptions) => {
@@ -89,7 +91,7 @@ function loginUser() {
         credentialRequestOptions.publicKey.challenge,
       );
       credentialRequestOptions.publicKey.allowCredentials.forEach(
-        function(listItem) {
+        function (listItem) {
           listItem.id = bufferDecode(listItem.id);
         },
       );
@@ -124,10 +126,11 @@ function loginUser() {
       });
     })
     .then(() => {
-      alert("Successfully logged in " + username + "!");
+      document.getElementById("notification").innerHTML =
+        "Successfully logged in.";
     })
     .catch((error) => {
       console.log(error);
-      alert("Failed to register " + username);
+      document.getElementById("notification").innerHTML = "Login failed.";
     });
 }

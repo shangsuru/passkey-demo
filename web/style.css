@@ -42,3 +42,12 @@ button:hover {
   top: 0;
   left: 0;
 }
+
+#notification {
+  padding: 10px;
+  margin: 15px;
+  border-radius: 5px;
+  width: 300px;
+  text-align: center;
+  color: blue;
+}
