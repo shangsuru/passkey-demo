@@ -2,7 +2,21 @@ An implementation of authentication with passkeys using the [go-webauthn](https:
 
 ## Local Setup
 
+Start Postgres and Redis with Docker Compose:
+
 ```
-docker compose up -d
+docker compose up
+```
+
+Setup the database:
+
+```
+go run ./db/migration db init
+go run ./db/migration db migrate
+```
+
+Start the server:
+
+```
 go run .
 ```
