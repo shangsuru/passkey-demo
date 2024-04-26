@@ -11,12 +11,11 @@
   <div class="header">
     <h1>Passkey Demo</h1>
   </div>
-  <label for="username">Username:</label>
-  <input type="text" name="username" id="username" placeholder="Enter your username" />
-  <br />
-  <br />
-  <button onclick="registerUser()">Register</button>
-  <button onclick="loginUser()">Login</button>
+  <input type="text" name="username" id="username" placeholder="Username" />
+  <div>
+    <button onclick="registerUser()">Register</button>
+    <button onclick="loginUser()">Login</button>
+  </div>
 
   <script src="/static/webauthn.js"></script>
 </body>
