@@ -26,7 +26,10 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			}
 		}
 
-		options, sessionData, err := wc.WebAuthnAPI.BeginRegistration(user)
+		options, sessionData, err := wc.WebAuthnAPI.BeginRegistration(
+			user,
+			webauthn.WithExclusions(user.CredentialExcludeList()),
+		)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, err.Error())
