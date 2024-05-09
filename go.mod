@@ -1,10 +1,10 @@
 module github.com/shangsuru/passkey-demo
 
-go 1.21
+go 1.22
 
 require (
-	github.com/go-webauthn/webauthn v0.9.4
-	github.com/google/uuid v1.4.0
+	github.com/go-webauthn/webauthn v0.10.2
+	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.12.0
@@ -19,9 +19,9 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
-	github.com/go-webauthn/x v0.1.5 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.6.0 // indirect
+	github.com/go-webauthn/x v0.1.9 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
