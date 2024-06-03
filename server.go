@@ -18,7 +18,8 @@ func (s *Server) Start() {
 
 func (s *Server) registerEndpoints() {
 	s.router.Static("/static", "web")
-	s.router.File("/", "web/login.html")
+	s.router.File("/", "web/register.html")
+	s.router.File("/login", "web/login.html")
 
 	s.router.GET("/register/begin/:username", s.webAuthnController.BeginRegistration())
 	s.router.POST("/register/finish/:username", s.webAuthnController.FinishRegistration())

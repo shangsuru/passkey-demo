@@ -11,15 +11,9 @@
       <h1>Passkey Demo</h1>
     </div>
     <div id="notification"></div>
-    <input
-      type="text"
-      name="username"
-      id="username"
-      placeholder="Username"
-      autocomplete="username webauthn"
-    />
-    <button onclick="loginUser()">Login</button>
-    <a class="link" href="/">Don't have an account?</a>
+    <input type="text" name="username" id="username" placeholder="Username" />
+    <button onclick="registerUser()">Register</button>
+    <a href="/login">Already have an account?</a>
 
     <script src="/static/webauthn.js"></script>
   </body>
