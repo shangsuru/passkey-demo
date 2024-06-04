@@ -46,12 +46,19 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			})
 		}
 
-		if err := CreateSession(ctx.Request().Context(), username, sessionData); err != nil {
+		id, err := CreateSession(ctx.Request().Context(), sessionData)
+		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
 			})
 		}
+
+		ctx.SetCookie(&http.Cookie{
+			Name:  "registration",
+			Value: id,
+			Path:  "/",
+		})
 
 		return ctx.JSON(http.StatusOK, options)
 	}
@@ -69,7 +76,15 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 			})
 		}
 
-		sessionData, err := GetSession(ctx.Request().Context(), username)
+		cookie, err := ctx.Cookie("registration")
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		sessionData, err := GetSession(ctx.Request().Context(), cookie.Value)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
@@ -123,12 +138,19 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 			})
 		}
 
-		if err := CreateSession(ctx.Request().Context(), username, sessionData); err != nil {
+		id, err := CreateSession(ctx.Request().Context(), sessionData)
+		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
 			})
 		}
+
+		ctx.SetCookie(&http.Cookie{
+			Name:  "login",
+			Value: id,
+			Path:  "/",
+		})
 
 		return ctx.JSON(http.StatusOK, options)
 	}
@@ -146,7 +168,15 @@ func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 			})
 		}
 
-		sessionData, err := GetSession(ctx.Request().Context(), username)
+		cookie, err := ctx.Cookie("login")
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		sessionData, err := GetSession(ctx.Request().Context(), cookie.Value)
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
