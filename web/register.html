@@ -1,59 +1,68 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>PassKey Demo</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css" />
-    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-  </head>
 
-  <body>
-    <div class="header">
-      <h1>Passkey Demo</h1>
-    </div>
-    <div id="notification"></div>
-    <input type="text" name="username" id="username" placeholder="Username" />
-    <button onclick="registerUser()">Register</button>
-    <a class="link" href="/login">Already have an account?</a>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <title>PassKey Demo</title>
+  <link rel="stylesheet" type="text/css" href="/static/style.css" />
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+</head>
 
-  <script>
-    async function registerUser() {
-      const username = document.getElementById("username").value;
-      if (username === "") {
-        alert("Please enter your username");
-        return;
-      }
+<body>
+  <div class="header">
+    <h1>Passkey Demo</h1>
+  </div>
+  <div id="notification"></div>
+  <input type="text" name="username" id="username" placeholder="Username" />
+  <button onclick="registerUser()">Register</button>
+  <a class="link" href="/login">Already have an account?</a>
+</body>
 
-      const { startRegistration } = SimpleWebAuthnBrowser;
+<script>
+  async function registerUser() {
+    const username = document.getElementById("username").value;
+    if (username === "") {
+      alert("Please enter your username");
+      return;
+    }
 
-      const response = await fetch(`/register/begin/${username}`);
-      let attestationResponse;
-      try {
-        const credentialCreationOptions = await response.json();
-        attestationResponse = await startRegistration(
-          credentialCreationOptions.publicKey,
-        );
-      } catch (error) {
-        throw error;
-      }
+    const {startRegistration} = SimpleWebAuthnBrowser;
 
-      const verificationResponse = await fetch(`/register/finish/${username}`, {
-        method: "POST",
-        body: JSON.stringify(attestationResponse),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const verificationJSON = await verificationResponse.json();
-
-      if (verificationJSON && verificationJSON.status === "ok") {
+    const response = await fetch(`/register/begin/${username}`);
+    let attestationResponse;
+    try {
+      const credentialCreationOptions = await response.json();
+      attestationResponse = await startRegistration(
+        credentialCreationOptions.publicKey,
+      );
+    } catch (error) {
+      if (error.name == "InvalidStateError") {
         document.getElementById("notification").innerHTML =
-          "Successfully registered.";
+          "An account with that username already exists.";
       } else {
         document.getElementById("notification").innerHTML =
-          "Registration failed.";
+          "An error occurred. Please try again.";
       }
+      return;
     }
-  </script>
+
+    const verificationResponse = await fetch(`/register/finish/${username}`, {
+      method: "POST",
+      body: JSON.stringify(attestationResponse),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const verificationJSON = await verificationResponse.json();
+
+    if (verificationJSON && verificationJSON.status === "ok") {
+      document.getElementById("notification").innerHTML =
+        "Successfully registered.";
+    } else {
+      document.getElementById("notification").innerHTML =
+        "Registration failed.";
+    }
+  }
+</script>
+
 </html>

@@ -1,64 +1,62 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>PassKey Demo</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css" />
-    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-  </head>
 
-  <body>
-    <div class="header">
-      <h1>Passkey Demo</h1>
-    </div>
-    <div id="notification"></div>
-    <input
-      type="text"
-      name="username"
-      id="username"
-      placeholder="Username"
-      autocomplete="username webauthn"
-    />
-    <button onclick="loginUser()">Login</button>
-    <a class="link" href="/">Don't have an account?</a>
+<head>
+  <meta charset="utf-8" />
+  <title>PassKey Demo</title>
+  <link rel="stylesheet" type="text/css" href="/static/style.css" />
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+</head>
 
-    <script>
-      async function loginUser() {
-        const username = document.getElementById("username").value;
-        if (username === "") {
-          alert("Please enter your username");
-          return;
-        }
+<body>
+  <div class="header">
+    <h1>Passkey Demo</h1>
+  </div>
+  <div id="notification"></div>
+  <input type="text" name="username" id="username" placeholder="Username" autocomplete="username webauthn" />
+  <button onclick="loginUser()">Login</button>
+  <a class="link" href="/">Don't have an account?</a>
 
-        const { startAuthentication } = SimpleWebAuthnBrowser;
-
-        const response = await fetch(`/login/begin/${username}`);
-        const credentialRequestOptions = await response.json();
-        let assertion;
-        try {
-          assertion = await startAuthentication(
-            credentialRequestOptions.publicKey,
-          );
-        } catch (error) {
-          throw error;
-        }
-
-        const verificationResponse = await fetch(`/login/finish/${username}`, {
-          method: "POST",
-          body: JSON.stringify(assertion),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const verificationJSON = await verificationResponse.json();
-        if (verificationJSON && verificationJSON.status === "ok") {
-          document.getElementById("notification").innerHTML =
-            "Successfully logged in.";
-        } else {
-          document.getElementById("notification").innerHTML = "Login failed.";
-        }
+  <script>
+    async function loginUser() {
+      const username = document.getElementById("username").value;
+      if (username === "") {
+        alert("Please enter your username");
+        return;
       }
-    </script>
-  </body>
+
+      const {startAuthentication} = SimpleWebAuthnBrowser;
+
+      const response = await fetch(`/login/begin/${username}`);
+      const credentialRequestOptions = await response.json();
+      let assertion;
+      try {
+        assertion = await startAuthentication(
+          credentialRequestOptions.publicKey,
+        );
+      } catch (error) {
+        document.getElementById("notification").innerHTML =
+          "An account with that username does not exist.";
+        return;
+      }
+
+      const verificationResponse = await fetch(`/login/finish/${username}`, {
+        method: "POST",
+        body: JSON.stringify(assertion),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const verificationJSON = await verificationResponse.json();
+      if (verificationJSON && verificationJSON.status === "ok") {
+        document.getElementById("notification").innerHTML =
+          "Successfully logged in.";
+      } else {
+        document.getElementById("notification").innerHTML = "Login failed.";
+      }
+    }
+  </script>
+</body>
+
 </html>
