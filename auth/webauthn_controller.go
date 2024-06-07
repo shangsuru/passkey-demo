@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 
@@ -34,8 +35,14 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			}
 		}
 
+		authSelect := protocol.AuthenticatorSelection{
+			RequireResidentKey: protocol.ResidentKeyRequired(),
+			ResidentKey:        protocol.ResidentKeyRequirementRequired,
+		}
+
 		options, sessionData, err := wc.WebAuthnAPI.BeginRegistration(
 			user,
+			webauthn.WithAuthenticatorSelection(authSelect),
 			webauthn.WithExclusions(user.CredentialExcludeList()),
 		)
 		if err != nil {
