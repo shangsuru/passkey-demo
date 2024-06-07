@@ -35,8 +35,16 @@
           credentialRequestOptions.publicKey,
         );
       } catch (error) {
-        document.getElementById("notification").innerHTML =
-          "An account with that username does not exist.";
+        switch (error.name) {
+          case "TypeError":
+            document.getElementById("notification").innerHTML =
+              "An account with that username does not exist.";
+            break;
+          default:
+            document.getElementById("notification").innerHTML =
+              "An error occurred. Please try again.";
+            break;
+        }
         return;
       }
 
