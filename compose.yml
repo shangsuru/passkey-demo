@@ -6,10 +6,11 @@ services:
     ports:
       - 15432:5432
     volumes:
-      - ./local/postgres/data/:/var/lib/postgresql/data
-      - ./local/postgres:/docker-entrypoint-initdb.d
+      - ./server/db/data:/var/lib/postgresql/data
     environment:
+      POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
   redis:
     image: redis:7.2.3
     ports:
