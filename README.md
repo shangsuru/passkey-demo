@@ -24,7 +24,7 @@ Start the server:
 go run .
 ```
 
-### HTTPS setup
+## HTTPS setup
 
 This is to test password managers like bitwarden.
 
