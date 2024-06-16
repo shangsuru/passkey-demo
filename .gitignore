@@ -1,1 +1,6 @@
 server/db/data
+node_modules
+client/node_modules
+server/dist
+server/tmp
+client/dist

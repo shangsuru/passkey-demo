@@ -2,26 +2,18 @@
 
 An implementation of authentication with passkeys using the [go-webauthn](https://github.com/go-webauthn/webauthn) library
 
-## Local Setup
+## Local Development
 
-Start Postgres and Redis with Docker Compose:
+Setup the app (installs dependencies and initializes database schema)
 
 ```powershell
-docker compose up
+./setup.sh
 ```
 
-Setup the database:
+Start the app (starts the Go server together with Redis and Postgres)
 
 ```powershell
-cd server
-go run ./db/migration db init
-go run ./db/migration db migrate
-```
-
-Start the server:
-
-```powershell
-go run .
+./dev.sh
 ```
 
 ## HTTPS setup
