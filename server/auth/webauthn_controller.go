@@ -35,7 +35,7 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			})
 		}
 		email := p.Email
-		if _, err := mail.ParseAddress(email); err != nil {
+		if !validEmail(email) {
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: "Invalid email",
@@ -70,7 +70,7 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			})
 		}
 
-		sessionID, err := CreateSession(ctx.Request().Context(), sessionData)
+		err = CreateSession(ctx, "registration", sessionData)
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
@@ -78,28 +78,13 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			})
 		}
 
-		ctx.SetCookie(&http.Cookie{
-			Name:  "registration",
-			Value: sessionID,
-			Path:  "/",
-		})
-
 		return ctx.JSON(http.StatusOK, options)
 	}
 }
 
 func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		cookie, err := ctx.Cookie("registration")
-		if err != nil {
-			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
-				Status:       "error",
-				ErrorMessage: err.Error(),
-			})
-		}
-		sessionID := cookie.Value
-
-		sessionData, err := GetSession(ctx.Request().Context(), sessionID)
+		sessionID, sessionData, err := GetSession(ctx, "registration")
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
@@ -179,7 +164,7 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 			})
 		}
 
-		sessionID, err := CreateSession(ctx.Request().Context(), sessionData)
+		err = CreateSession(ctx, "login", sessionData)
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
@@ -187,28 +172,13 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 			})
 		}
 
-		ctx.SetCookie(&http.Cookie{
-			Name:  "login",
-			Value: sessionID,
-			Path:  "/",
-		})
-
 		return ctx.JSON(http.StatusOK, options)
 	}
 }
 
 func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		cookie, err := ctx.Cookie("login")
-		if err != nil {
-			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
-				Status:       "error",
-				ErrorMessage: err.Error(),
-			})
-		}
-		sessionID := cookie.Value
-
-		sessionData, err := GetSession(ctx.Request().Context(), sessionID)
+		sessionID, sessionData, err := GetSession(ctx, "login")
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
@@ -253,4 +223,9 @@ func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 			ErrorMessage: "",
 		})
 	}
+}
+
+func validEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }
