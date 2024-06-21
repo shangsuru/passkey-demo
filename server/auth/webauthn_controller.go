@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"net/mail"
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -20,13 +21,30 @@ type FIDO2Response struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
+type Params struct {
+	Email string
+}
+
 func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		username := ctx.Param("username")
+		var p Params
+		if err := ctx.Bind(&p); err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+		email := p.Email
+		if _, err := mail.ParseAddress(email); err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: "Invalid email",
+			})
+		}
 
-		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
+		user, err := wc.UserStore.FindUserByEmail(ctx.Request().Context(), email)
 		if err != nil {
-			user, err = wc.UserStore.CreateUser(ctx.Request().Context(), username)
+			user, err = wc.UserStore.CreateUser(ctx.Request().Context(), email)
 			if err != nil {
 				return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 					Status:       "error",
@@ -46,7 +64,6 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			webauthn.WithExclusions(user.CredentialExcludeList()),
 		)
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -73,16 +90,6 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 
 func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		username := ctx.Param("username")
-		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
-				Status:       "error",
-				ErrorMessage: err.Error(),
-			})
-		}
-
 		cookie, err := ctx.Cookie("registration")
 		if err != nil {
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
@@ -94,8 +101,15 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 
 		sessionData, err := GetSession(ctx.Request().Context(), sessionID)
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		user, err := wc.UserStore.FindUserByID(ctx.Request().Context(), sessionData.UserID)
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
 			})
@@ -103,7 +117,6 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 
 		credential, err := wc.WebAuthnAPI.FinishRegistration(user, *sessionData, ctx.Request())
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -118,7 +131,6 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 		}
 
 		if err := wc.UserStore.AddWebauthnCredential(ctx.Request().Context(), user.ID, credential); err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -136,10 +148,16 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 
 func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		username := ctx.Param("username")
-		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
+		var p Params
+		if err := ctx.Bind(&p); err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		user, err := wc.UserStore.FindUserByEmail(ctx.Request().Context(), p.Email)
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -155,7 +173,6 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 
 		options, sessionData, err := wc.WebAuthnAPI.BeginLogin(user)
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -182,16 +199,6 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 
 func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		username := ctx.Param("username")
-		user, err := wc.UserStore.FindUserByName(ctx.Request().Context(), username)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
-				Status:       "error",
-				ErrorMessage: err.Error(),
-			})
-		}
-
 		cookie, err := ctx.Cookie("login")
 		if err != nil {
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
@@ -209,9 +216,16 @@ func (wc WebAuthnController) FinishLogin() echo.HandlerFunc {
 			})
 		}
 
+		user, err := wc.UserStore.FindUserByID(ctx.Request().Context(), sessionData.UserID)
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
 		credential, err := wc.WebAuthnAPI.FinishLogin(user, *sessionData, ctx.Request())
 		if err != nil {
-			ctx.Logger().Error(err)
 			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),

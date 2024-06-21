@@ -12,13 +12,13 @@ type UserRepository struct {
 	DB *bun.DB
 }
 
-func (ur *UserRepository) FindUserByName(ctx context.Context, name string) (*User, error) {
+func (ur *UserRepository) FindUserByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
 	err := ur.DB.NewSelect().
 		Model(&user).
 		Relation("WebauthnCredentials").
 		Column("*").
-		Where("name = ?", name).
+		Where("email = ?", email).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -27,12 +27,32 @@ func (ur *UserRepository) FindUserByName(ctx context.Context, name string) (*Use
 	return &user, nil
 }
 
-func (ur *UserRepository) CreateUser(ctx context.Context, name string) (*User, error) {
-	user := &User{
-		Name: name,
+func (ur *UserRepository) FindUserByID(ctx context.Context, userIDBytes []byte) (*User, error) {
+	userID, err := uuid.FromBytes(userIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	
+	var user User
+	err = ur.DB.NewSelect().
+		Model(&user).
+		Relation("WebauthnCredentials").
+		Column("*").
+		Where("id = ?", userID).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err := ur.DB.NewInsert().Model(user).Column("name").Returning("*").Exec(ctx, user)
+	return &user, nil
+}
+
+func (ur *UserRepository) CreateUser(ctx context.Context, email string) (*User, error) {
+	user := &User{
+		Email: email,
+	}
+
+	_, err := ur.DB.NewInsert().Model(user).Column("email").Returning("*").Exec(ctx, user)
 	if err != nil {
 		return nil, err
 	}
