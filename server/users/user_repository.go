@@ -27,8 +27,8 @@ func (ur *UserRepository) FindUserByEmail(ctx context.Context, email string) (*U
 	return &user, nil
 }
 
-func (ur *UserRepository) FindUserByID(ctx context.Context, userIDBytes []byte) (*User, error) {
-	userID, err := uuid.FromBytes(userIDBytes)
+func (ur *UserRepository) FindUserByID(ctx context.Context, rawUserID []byte) (*User, error) {
+	userID, err := uuid.FromBytes(rawUserID)
 	if err != nil {
 		return nil, err
 	}

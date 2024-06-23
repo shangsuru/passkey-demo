@@ -131,6 +131,27 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 	}
 }
 
+func (wc WebAuthnController) BeginDiscoverableLogin() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		options, sessionData, err := wc.WebAuthnAPI.BeginDiscoverableLogin()
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		if err := CreateSession(ctx, "login", sessionData); err != nil {
+			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		return ctx.JSON(http.StatusOK, options)
+	}
+}
+
 func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		var p Params
@@ -164,8 +185,7 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 			})
 		}
 
-		err = CreateSession(ctx, "login", sessionData)
-		if err != nil {
+		if err := CreateSession(ctx, "login", sessionData); err != nil {
 			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
 				Status:       "error",
 				ErrorMessage: err.Error(),
@@ -173,6 +193,49 @@ func (wc WebAuthnController) BeginLogin() echo.HandlerFunc {
 		}
 
 		return ctx.JSON(http.StatusOK, options)
+	}
+}
+
+func (wc WebAuthnController) FinishDiscoverableLogin() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		sessionID, sessionData, err := GetSession(ctx, "login")
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		credential, err := wc.WebAuthnAPI.FinishDiscoverableLogin(func(rawId []byte, userID []byte) (user webauthn.User, err error) {
+			return wc.UserStore.FindUserByID(ctx.Request().Context(), userID)
+		}, *sessionData, ctx.Request())
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: err.Error(),
+			})
+		}
+
+		if !credential.Flags.UserPresent || !credential.Flags.UserVerified {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: "User not present or not verified",
+			})
+		}
+
+		if credential.Authenticator.CloneWarning {
+			return ctx.JSON(http.StatusBadRequest, FIDO2Response{
+				Status:       "error",
+				ErrorMessage: "Authenticator is cloned",
+			})
+		}
+
+		DeleteSession(ctx.Request().Context(), sessionID)
+
+		return ctx.JSON(http.StatusOK, FIDO2Response{
+			Status:       "ok",
+			ErrorMessage: "",
+		})
 	}
 }
 
