@@ -32,7 +32,7 @@ func (ur *UserRepository) FindUserByID(ctx context.Context, rawUserID []byte) (*
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var user User
 	err = ur.DB.NewSelect().
 		Model(&user).

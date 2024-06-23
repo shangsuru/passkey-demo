@@ -27,10 +27,10 @@ func init() {
 
 func GetSession(ctx echo.Context, sessionName string) (string, *webauthn.SessionData, error) {
 	cookie, err := ctx.Cookie(sessionName)
-		if err != nil {
-			return "", nil, fmt.Errorf("failed to get session cookie: %v", err)
-		}
-		id := cookie.Value
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get session cookie: %v", err)
+	}
+	id := cookie.Value
 
 	bytes, err := sessionStore.Get(ctx.Request().Context(), id).Bytes()
 	if err != nil {
