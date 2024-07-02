@@ -7,13 +7,13 @@ An implementation of authentication with passkeys using the [go-webauthn](https:
 Setup the app (installs dependencies and initializes database schema)
 
 ```powershell
-./setup.sh
+make install
 ```
 
 Start the app (starts the Go server together with Redis and Postgres)
 
 ```powershell
-./dev.sh
+make run
 ```
 
 ## HTTPS setup

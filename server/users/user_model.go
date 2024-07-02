@@ -1,7 +1,6 @@
 package users
 
 import (
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -35,11 +34,11 @@ func (u *User) WebAuthnID() []byte {
 }
 
 func (u *User) WebAuthnName() string {
-	return strings.Split(u.Email, "@")[0]
+	return u.Email
 }
 
 func (u *User) WebAuthnDisplayName() string {
-	return strings.Split(u.Email, "@")[0]
+	return u.Email
 }
 
 func (u *User) WebAuthnIcon() string {
