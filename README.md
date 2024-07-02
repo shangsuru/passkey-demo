@@ -20,8 +20,6 @@ make run
 
 This is to test password managers like bitwarden.
 
-![alt text](bitwarden-login.png)
-
 Create a custom HTTPS URL that will route traffic to your your local server. In this case `http://localhost:9044`
 
 ```powershell
