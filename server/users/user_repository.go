@@ -47,12 +47,13 @@ func (ur *UserRepository) FindUserByID(ctx context.Context, rawUserID []byte) (*
 	return &user, nil
 }
 
-func (ur *UserRepository) CreateUser(ctx context.Context, email string) (*User, error) {
+func (ur *UserRepository) CreateUser(ctx context.Context, email string, passwordHash string) (*User, error) {
 	user := &User{
-		Email: email,
+		Email:        email,
+		PasswordHash: passwordHash,
 	}
 
-	_, err := ur.DB.NewInsert().Model(user).Column("email").Returning("*").Exec(ctx, user)
+	_, err := ur.DB.NewInsert().Model(user).Column("email", "password_hash").Returning("*").Exec(ctx, user)
 	if err != nil {
 		return nil, err
 	}
