@@ -3,7 +3,9 @@ install:
 # Install frontend dependencies
 	cd client && yarn install
 # Setup the database
-	cd server && go run ./db/migration db init && go run ./db/migration db migrate
+	cd server && go run ./db/migration db init
+	cd server && go run ./db/migration db migrate
+	
 	docker compose down
 
 run:
@@ -14,3 +16,6 @@ run:
 	cd client && yarn dev & 
 # Start the server and watch for changes
 	cd server && air
+
+dump-db:
+	rm -rf ./server/db/data/**
