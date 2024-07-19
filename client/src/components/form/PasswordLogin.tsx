@@ -12,7 +12,7 @@ export function PasswordLogin(): React.ReactElement {
 
   useEffect(() => {
     passkeyAutofill();
-  }, []);
+  });
 
   async function loginUser() {
     if (email === "") {
@@ -55,15 +55,17 @@ export function PasswordLogin(): React.ReactElement {
         credentialRequestOptions.publicKey,
         true
       );
-    } catch (error: any) {
-      switch (error.name) {
-        case "TypeError":
-          setNotification("An account with that email does not exist.");
-          break;
-        case "AbortError":
-          break;
-        default:
-          setNotification("An error occurred. Please try again.");
+    } catch (error) {
+      if (error instanceof Error) {
+        switch (error.name) {
+          case "TypeError":
+            setNotification("An account with that email does not exist.");
+            break;
+          case "AbortError":
+            break;
+          default:
+            setNotification("An error occurred. Please try again.");
+        }
       }
       return;
     }

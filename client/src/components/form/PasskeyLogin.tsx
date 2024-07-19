@@ -27,15 +27,17 @@ export function PasskeyLogin(): React.ReactElement {
     let assertion: AuthenticationResponseJSON;
     try {
       assertion = await startAuthentication(credentialRequestOptions.publicKey);
-    } catch (error: any) {
-      switch (error.name) {
-        case "TypeError":
-          setNotification("There is no passkey associated with this account.");
-          break;
-        case "AbortError":
-          break;
-        default:
-          setNotification("An error occurred. Please try again.");
+    } catch (error) {
+      if (error instanceof Error) {
+        switch (error.name) {
+          case "TypeError":
+            setNotification("There is no passkey associated with this account.");
+            break;
+          case "AbortError":
+            break;
+          default:
+            setNotification("An error occurred. Please try again.");
+        }
       }
       return;
     }

@@ -39,7 +39,7 @@ export function PasskeySignUp(): React.ReactElement {
       registrationResponse = await startRegistration(
         credentialCreationOptions.publicKey
       );
-    } catch (error: any) {
+    } catch {
       setNotification("An error occurred. Please try again.");
       return;
     }
