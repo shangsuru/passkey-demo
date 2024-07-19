@@ -29,9 +29,13 @@ func NewServer() (*Server, error) {
 		UserStore:   userRepository,
 		WebAuthnAPI: webAuthn,
 	}
+	passwordController := auth.PasswordController{
+		UserStore: userRepository,
+	}
 	server := &Server{
 		router:             echoEcho,
 		webAuthnController: webAuthnController,
+		passwordController: passwordController,
 	}
 	return server, nil
 }

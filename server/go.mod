@@ -3,6 +3,7 @@ module github.com/shangsuru/passkey-demo
 go 1.22
 
 require (
+	github.com/alexedwards/argon2id v1.0.0
 	github.com/go-webauthn/webauthn v0.10.2
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
@@ -36,8 +37,8 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 )

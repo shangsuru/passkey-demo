@@ -10,10 +10,36 @@ export function PasswordLogin(): React.ReactElement {
   const [notification, setNotification] = useState("");
 
   useEffect(() => {
-    loginUser();
+    passkeyAutofill();
   }, []);
 
   async function loginUser() {
+    if (email === "") {
+      setNotification("Please enter your email.");
+      return;
+    }
+
+    if (password === "") {
+      setNotification("Please enter your password.");
+      return;
+    }
+
+    const response = await fetch(`/login/password`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const loginJSON = await response.json();
+    if (loginJSON.status === "ok") {
+      setNotification("Successfully logged in.");
+    } else {
+      setNotification(loginJSON.errorMessage);
+    }
+  }
+
+  async function passkeyAutofill() {
     const response = await fetch(`/discoverable_login/begin`, {
       method: "POST",
       body: JSON.stringify({ email }),
@@ -79,10 +105,7 @@ export function PasswordLogin(): React.ReactElement {
           onChange={setPassword}
         />
 
-        <Button
-          onClickFunc={() => setNotification("Not yet implemented")}
-          buttonText="Sign in"
-        />
+        <Button onClickFunc={loginUser} buttonText="Sign in" />
       </div>
     </>
   );

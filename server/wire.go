@@ -12,11 +12,13 @@ import (
 	"github.com/shangsuru/passkey-demo/users"
 )
 
+// After updating this, run `go generate` to update wire_gen.go
 func NewServer() (*Server, error) {
 	panic(wire.Build(
 		wire.Struct(new(Server), "*"),
 		echo.New,
 		wire.Struct(new(auth.WebAuthnController), "*"),
+		wire.Struct(new(auth.PasswordController), "*"),
 		wire.Struct(new(users.UserRepository), "*"),
 		db.GetDB,
 		auth.NewWebAuthnAPI,

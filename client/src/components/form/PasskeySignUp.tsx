@@ -25,17 +25,15 @@ export function PasskeySignUp(): React.ReactElement {
     let registrationResponse: RegistrationResponseJSON;
     try {
       const credentialCreationOptions = await response.json();
+      if (credentialCreationOptions.status === "error") {
+        setNotification(credentialCreationOptions.errorMessage);
+        return;
+      }
       registrationResponse = await startRegistration(
         credentialCreationOptions.publicKey
       );
     } catch (error: any) {
-      switch (error.name) {
-        case "InvalidStateError":
-          setNotification("An account with that email already exists.");
-          break;
-        default:
-          setNotification("An error occurred. Please try again.");
-      }
+      setNotification("An error occurred. Please try again.");
       return;
     }
 
