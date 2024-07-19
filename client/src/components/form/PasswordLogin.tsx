@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { AuthenticationResponseJSON } from "@simplewebauthn/types";
+import { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
+import { AuthResponse } from "../../utils/types.ts";
 
 export function PasswordLogin(): React.ReactElement {
   const [email, setEmail] = useState("");
@@ -28,10 +29,10 @@ export function PasswordLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify({ email, password }),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
-    const loginJSON = await response.json();
+    const loginJSON: AuthResponse = await response.json();
     if (loginJSON.status === "ok") {
       setNotification("Successfully logged in.");
     } else {
@@ -44,10 +45,10 @@ export function PasswordLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify({ email }),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
-    const credentialRequestOptions = await response.json();
+    const credentialRequestOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON } = await response.json();
     let assertion: AuthenticationResponseJSON;
     try {
       assertion = await startAuthentication(
@@ -71,12 +72,12 @@ export function PasswordLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify(assertion),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
 
-    const verificationJSON = await verificationResponse.json();
-    if (verificationJSON && verificationJSON.status === "ok") {
+    const verificationJSON: AuthResponse = await verificationResponse.json();
+    if (verificationJSON.status === "ok") {
       setNotification("Successfully logged in.");
     } else {
       setNotification("Login failed.");

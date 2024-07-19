@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
 import { isValidEmail } from "../../utils/validEmail";
+import { AuthResponse } from "../../utils/types.ts";
 
 export function PasswordSignUp(): React.ReactElement {
   const [email, setEmail] = useState("");
@@ -23,10 +24,10 @@ export function PasswordSignUp(): React.ReactElement {
       method: "POST",
       body: JSON.stringify({ email, password }),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
-    const registrationJSON = await response.json();
+    const registrationJSON: AuthResponse = await response.json();
     if (registrationJSON.status === "ok") {
       setNotification("Successfully registered.");
     } else {

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { AuthenticationResponseJSON } from "@simplewebauthn/types";
+import { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
 import { isValidEmail } from "../../utils/validEmail";
+import { AuthResponse } from "../../utils/types.ts";
 
 export function PasskeyLogin(): React.ReactElement {
   const [email, setEmail] = useState("");
@@ -19,10 +20,10 @@ export function PasskeyLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify({ email }),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
-    const credentialRequestOptions = await response.json();
+    const credentialRequestOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON } = await response.json();
     let assertion: AuthenticationResponseJSON;
     try {
       assertion = await startAuthentication(credentialRequestOptions.publicKey);
@@ -43,12 +44,12 @@ export function PasskeyLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify(assertion),
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     });
 
-    const verificationJSON = await verificationResponse.json();
-    if (verificationJSON && verificationJSON.status === "ok") {
+    const verificationJSON: AuthResponse = await verificationResponse.json();
+    if (verificationJSON.status === "ok") {
       setNotification("Successfully logged in.");
     } else {
       setNotification("Login failed.");
