@@ -18,4 +18,5 @@ run:
 	cd server && air
 
 dump-db:
+	docker compose down
 	rm -rf ./server/db/data/**
