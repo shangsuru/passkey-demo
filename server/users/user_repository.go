@@ -61,6 +61,11 @@ func (ur *UserRepository) CreateUser(ctx context.Context, email string, password
 	return user, nil
 }
 
+func (ur *UserRepository) DeleteUser(ctx context.Context, user *User) error {
+	_, err := ur.DB.NewDelete().Model(user).WherePK().Exec(ctx)
+	return err
+}
+
 func (ur *UserRepository) AddWebauthnCredential(ctx context.Context, userID uuid.UUID, credential *webauthn.Credential) error {
 	newWebauthnCredential := &WebauthnCredentials{
 		UserID:          userID,

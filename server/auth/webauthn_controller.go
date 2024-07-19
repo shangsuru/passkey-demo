@@ -57,11 +57,13 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			webauthn.WithExclusions(user.CredentialExcludeList()),
 		)
 		if err != nil {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
 		err = CreateSession(ctx, "registration", sessionData)
 		if err != nil {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -83,14 +85,17 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 
 		credential, err := wc.WebAuthnAPI.FinishRegistration(user, *sessionData, ctx.Request())
 		if err != nil {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
 		if !credential.Flags.UserPresent || !credential.Flags.UserVerified {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, "User not present or not verified.", http.StatusBadRequest)
 		}
 
 		if err := wc.UserStore.AddWebauthnCredential(ctx.Request().Context(), user.ID, credential); err != nil {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
