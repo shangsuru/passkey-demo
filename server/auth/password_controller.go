@@ -15,7 +15,7 @@ type PasswordController struct {
 
 func (pc PasswordController) SignUp() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		var p AuthParams
+		var p Params
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
@@ -28,7 +28,7 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Password must be at least 8 characters", http.StatusBadRequest)
 		}
 
-		_, err := pc.UserStore.FindUserByEmail(ctx.Request().Context(), email)
+		user, err := pc.UserStore.FindUserByEmail(ctx.Request().Context(), email)
 		if err == nil {
 			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
 		}
@@ -43,13 +43,17 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
+		if err = Login(ctx, user.ID); err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
 		return sendOK(ctx)
 	}
 }
 
 func (pc PasswordController) Login() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		var p AuthParams
+		var p Params
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
@@ -72,6 +76,22 @@ func (pc PasswordController) Login() echo.HandlerFunc {
 			return sendError(ctx, "Invalid password.", http.StatusUnauthorized)
 		}
 
+		if err = Login(ctx, user.ID); err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		return sendOK(ctx)
+	}
+}
+
+func (pc PasswordController) Logout() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		cookie, err := ctx.Cookie("auth")
+		if err != nil {
+			return sendError(ctx, "Not logged in.", http.StatusUnauthorized)
+		}
+		sessionID := cookie.Value
+		Logout(ctx.Request().Context(), sessionID)
 		return sendOK(ctx)
 	}
 }

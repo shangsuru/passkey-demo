@@ -87,3 +87,17 @@ func (ur *UserRepository) AddWebauthnCredential(ctx context.Context, userID uuid
 
 	return nil
 }
+
+func (ur *UserRepository) FindUserIDByCredentialID(ctx context.Context, id []byte) (*uuid.UUID, error) {
+	var credential WebauthnCredentials
+	err := ur.DB.NewSelect().
+		Model(&credential).
+		Column("user_id").
+		Where("credential_id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &credential.UserID, nil
+}

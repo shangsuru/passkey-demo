@@ -2,13 +2,11 @@ package auth
 
 import (
 	"github.com/alexedwards/argon2id"
-	"github.com/labstack/gommon/random"
-	"net/http"
-	"net/mail"
-
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/random"
+	"net/http"
 
 	"github.com/shangsuru/passkey-demo/users"
 )
@@ -20,7 +18,7 @@ type WebAuthnController struct {
 
 func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		var p AuthParams
+		var p Params
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
@@ -61,7 +59,7 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
-		err = CreateSession(ctx, "registration", sessionData)
+		err = CreateWebauthnSession(ctx, "registration", sessionData)
 		if err != nil {
 			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
@@ -73,7 +71,7 @@ func (wc WebAuthnController) BeginRegistration() echo.HandlerFunc {
 
 func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		sessionID, sessionData, err := GetSession(ctx, "registration")
+		sessionID, sessionData, err := GetWebauthnSession(ctx, "registration")
 		if err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
@@ -100,6 +98,11 @@ func (wc WebAuthnController) FinishRegistration() echo.HandlerFunc {
 		}
 
 		_ = DeleteSession(ctx.Request().Context(), sessionID)
+
+		if err = Login(ctx, user.ID); err != nil {
+			_ = wc.UserStore.DeleteUser(ctx.Request().Context(), user)
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
 
 		return sendOK(ctx)
 	}
@@ -128,7 +131,7 @@ func (wc WebAuthnController) assertionOptions(getCredentialAssertion func(ctx ec
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
-		if err := CreateSession(ctx, "login", sessionData); err != nil {
+		if err := CreateWebauthnSession(ctx, "login", sessionData); err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -138,7 +141,7 @@ func (wc WebAuthnController) assertionOptions(getCredentialAssertion func(ctx ec
 
 func (wc WebAuthnController) assertionResult(getCredential func(ctx echo.Context, sessionData *webauthn.SessionData) (*webauthn.Credential, error)) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		sessionID, sessionData, err := GetSession(ctx, "login")
+		sessionID, sessionData, err := GetWebauthnSession(ctx, "login")
 		if err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
@@ -158,12 +161,21 @@ func (wc WebAuthnController) assertionResult(getCredential func(ctx echo.Context
 
 		_ = DeleteSession(ctx.Request().Context(), sessionID)
 
+		userID, err := wc.UserStore.FindUserIDByCredentialID(ctx.Request().Context(), credential.ID)
+		if err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		if err = Login(ctx, *userID); err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
 		return sendOK(ctx)
 	}
 }
 
 func (wc WebAuthnController) getCredentialAssertion(ctx echo.Context) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
-	var p AuthParams
+	var p Params
 	if err := ctx.Bind(&p); err != nil {
 		return nil, nil, err
 	}
@@ -208,9 +220,4 @@ func (wc WebAuthnController) getDiscoverableCredential(ctx echo.Context, session
 		return wc.UserStore.FindUserByID(ctx.Request().Context(), userID)
 	}, *sessionData, ctx.Request())
 	return credential, err
-}
-
-func validEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
 }

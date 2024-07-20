@@ -2,9 +2,7 @@ package main
 
 import (
 	"embed"
-
 	"github.com/labstack/echo/v4"
-
 	"github.com/shangsuru/passkey-demo/auth"
 )
 
@@ -38,6 +36,7 @@ func (s *Server) registerEndpoints() {
 	s.router.POST("/discoverable_login/finish", s.webAuthnController.FinishDiscoverableLogin())
 	s.router.POST("/register/password", s.passwordController.SignUp())
 	s.router.POST("/login/password", s.passwordController.Login())
+	s.router.POST("/logout", s.passwordController.Logout())
 
 	s.router.FileFS("/", "index.html", distIndexHtml)
 	s.router.FileFS("/sign-up", "index.html", distIndexHtml)

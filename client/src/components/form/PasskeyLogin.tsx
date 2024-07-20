@@ -3,12 +3,15 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
-import { isValidEmail } from "../../utils/validEmail";
+import { isValidEmail } from "../../utils/shared.ts";
 import { AuthResponse } from "../../utils/types.ts";
+import { useNavigate } from "react-router-dom";
 
 export function PasskeyLogin(): React.ReactElement {
   const [email, setEmail] = useState("");
   const [notification, setNotification] = useState("");
+
+  const navigate = useNavigate();
 
   async function loginUser() {
     if (!isValidEmail(email)) {
@@ -52,7 +55,7 @@ export function PasskeyLogin(): React.ReactElement {
 
     const verificationJSON: AuthResponse = await verificationResponse.json();
     if (verificationJSON.status === "ok") {
-      setNotification("Successfully logged in.");
+      navigate("/home");
     } else {
       setNotification("Login failed.");
     }
