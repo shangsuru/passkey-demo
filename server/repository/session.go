@@ -1,4 +1,4 @@
-package handler
+package repository
 
 import (
 	"context"
@@ -14,27 +14,33 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const webauthnSessionDuration time.Duration = 5 * time.Minute
-const sessionDuration time.Duration = 30 * 24 * time.Hour
+const webauthnSessionDuration = 5 * time.Minute
+const sessionDuration = 30 * 24 * time.Hour
 
-var sessionStore *redis.Client
+type SessionRepository struct {
+	redisClient *redis.Client
+}
 
-func init() {
-	sessionStore = redis.NewClient(&redis.Options{
+func NewSessionRepository() SessionRepository {
+	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:16379",
 		Password: "",
 		DB:       0,
 	})
+
+	return SessionRepository{
+		redisClient: redisClient,
+	}
 }
 
-func GetWebauthnSession(ctx echo.Context, sessionName string) (string, *webauthn.SessionData, error) {
+func (sr *SessionRepository) GetWebauthnSession(ctx echo.Context, sessionName string) (string, *webauthn.SessionData, error) {
 	cookie, err := ctx.Cookie(sessionName)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get session cookie: %v", err)
 	}
 	id := cookie.Value
 
-	bytes, err := sessionStore.Get(ctx.Request().Context(), id).Bytes()
+	bytes, err := sr.redisClient.Get(ctx.Request().Context(), id).Bytes()
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get session: %v", err)
 	}
@@ -47,14 +53,14 @@ func GetWebauthnSession(ctx echo.Context, sessionName string) (string, *webauthn
 	return id, data, nil
 }
 
-func CreateWebauthnSession(ctx echo.Context, sessionName string, data *webauthn.SessionData) error {
+func (sr *SessionRepository) CreateWebauthnSession(ctx echo.Context, sessionName string, data *webauthn.SessionData) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to encode session data: %v", err)
 	}
 
 	id := uuid.New().String()
-	if err := sessionStore.Set(ctx.Request().Context(), id, bytes, webauthnSessionDuration).Err(); err != nil {
+	if err := sr.redisClient.Set(ctx.Request().Context(), id, bytes, webauthnSessionDuration).Err(); err != nil {
 		return fmt.Errorf("failed to save session: %v", err)
 	}
 
@@ -67,9 +73,9 @@ func CreateWebauthnSession(ctx echo.Context, sessionName string, data *webauthn.
 	return nil
 }
 
-func Login(ctx echo.Context, userID uuid.UUID) error {
+func (sr *SessionRepository) Login(ctx echo.Context, userID uuid.UUID) error {
 	sessionID := random.String(20)
-	if err := sessionStore.Set(ctx.Request().Context(), sessionID, userID, sessionDuration).Err(); err != nil {
+	if err := sr.redisClient.Set(ctx.Request().Context(), sessionID, userID, sessionDuration).Err(); err != nil {
 		return err
 	}
 
@@ -81,12 +87,12 @@ func Login(ctx echo.Context, userID uuid.UUID) error {
 	return nil
 }
 
-func Logout(ctx context.Context, sessionID string) {
-	_ = DeleteSession(ctx, sessionID)
+func (sr *SessionRepository) Logout(ctx context.Context, sessionID string) {
+	_ = sr.DeleteSession(ctx, sessionID)
 }
 
-func DeleteSession(ctx context.Context, id string) error {
-	if err := sessionStore.Del(ctx, id).Err(); err != nil {
+func (sr *SessionRepository) DeleteSession(ctx context.Context, id string) error {
+	if err := sr.redisClient.Del(ctx, id).Err(); err != nil {
 		return fmt.Errorf("failed to delete session: %v", err)
 	}
 

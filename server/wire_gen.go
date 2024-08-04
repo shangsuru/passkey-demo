@@ -15,22 +15,26 @@ import (
 
 // Injectors from wire.go:
 
+// After updating this, run `go generate` to update wire_gen.go
 func NewServer() (*Server, error) {
 	echoEcho := echo.New()
 	bunDB := db.GetDB()
 	userRepository := repository.UserRepository{
 		DB: bunDB,
 	}
-	webAuthn, err := handler.NewWebAuthnAPI()
+	webAuthn, err := repository.NewWebAuthnAPI()
 	if err != nil {
 		return nil, err
 	}
+	sessionRepository := repository.NewSessionRepository()
 	webAuthnController := handler.WebAuthnController{
-		UserRepository: userRepository,
-		WebAuthnAPI:    webAuthn,
+		UserRepository:    userRepository,
+		WebAuthnAPI:       webAuthn,
+		SessionRepository: sessionRepository,
 	}
 	passwordController := handler.PasswordController{
-		UserRepository: userRepository,
+		UserRepository:    userRepository,
+		SessionRepository: sessionRepository,
 	}
 	server := &Server{
 		router:             echoEcho,

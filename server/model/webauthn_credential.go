@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// https://github.com/go-webauthn/webauthn/blob/master/webauthn/credential.go
 type WebauthnCredentials struct {
 	ID              uuid.UUID                         `json:"id" bun:"id,pk"`
 	UserID          uuid.UUID                         `json:"user_id" bun:"user_id"`
@@ -17,3 +16,5 @@ type WebauthnCredentials struct {
 	Flags           webauthn.CredentialFlags          `json:"flags" bun:"flags"`
 	Authenticator   webauthn.Authenticator            `json:"authenticator" bun:"authenticator"`
 }
+
+// Required fields for this struct are taken from https://github.com/go-webauthn/webauthn/blob/master/webauthn/credential.go
