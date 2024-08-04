@@ -1,16 +1,15 @@
-package auth
+package handler
 
 import (
+	"github.com/shangsuru/passkey-demo/repository"
 	"net/http"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/labstack/echo/v4"
-
-	"github.com/shangsuru/passkey-demo/users"
 )
 
 type PasswordController struct {
-	UserStore users.UserRepository
+	UserRepository repository.UserRepository
 }
 
 func (pc PasswordController) SignUp() echo.HandlerFunc {
@@ -28,7 +27,7 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Password must be at least 8 characters", http.StatusBadRequest)
 		}
 
-		user, err := pc.UserStore.FindUserByEmail(ctx.Request().Context(), email)
+		user, err := pc.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
 		if err == nil {
 			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
 		}
@@ -38,7 +37,7 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
-		_, err = pc.UserStore.CreateUser(ctx.Request().Context(), email, passwordHash)
+		_, err = pc.UserRepository.CreateUser(ctx.Request().Context(), email, passwordHash)
 		if err != nil {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
@@ -62,7 +61,7 @@ func (pc PasswordController) Login() echo.HandlerFunc {
 			return sendError(ctx, "Invalid email", http.StatusBadRequest)
 		}
 
-		user, err := pc.UserStore.FindUserByEmail(ctx.Request().Context(), email)
+		user, err := pc.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
 		if err != nil {
 			return sendError(ctx, "An account with that email does not exist.", http.StatusNotFound)
 		}

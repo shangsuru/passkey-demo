@@ -3,13 +3,13 @@ package main
 import (
 	"embed"
 	"github.com/labstack/echo/v4"
-	"github.com/shangsuru/passkey-demo/auth"
+	"github.com/shangsuru/passkey-demo/handler"
 )
 
 type Server struct {
 	router             *echo.Echo
-	webAuthnController auth.WebAuthnController
-	passwordController auth.PasswordController
+	webAuthnController handler.WebAuthnController
+	passwordController handler.PasswordController
 }
 
 func (s *Server) Start() {

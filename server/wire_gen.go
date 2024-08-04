@@ -8,9 +8,9 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/shangsuru/passkey-demo/auth"
 	"github.com/shangsuru/passkey-demo/db"
-	"github.com/shangsuru/passkey-demo/users"
+	"github.com/shangsuru/passkey-demo/handler"
+	"github.com/shangsuru/passkey-demo/repository"
 )
 
 // Injectors from wire.go:
@@ -18,19 +18,19 @@ import (
 func NewServer() (*Server, error) {
 	echoEcho := echo.New()
 	bunDB := db.GetDB()
-	userRepository := users.UserRepository{
+	userRepository := repository.UserRepository{
 		DB: bunDB,
 	}
-	webAuthn, err := auth.NewWebAuthnAPI()
+	webAuthn, err := handler.NewWebAuthnAPI()
 	if err != nil {
 		return nil, err
 	}
-	webAuthnController := auth.WebAuthnController{
-		UserStore:   userRepository,
-		WebAuthnAPI: webAuthn,
+	webAuthnController := handler.WebAuthnController{
+		UserRepository: userRepository,
+		WebAuthnAPI:    webAuthn,
 	}
-	passwordController := auth.PasswordController{
-		UserStore: userRepository,
+	passwordController := handler.PasswordController{
+		UserRepository: userRepository,
 	}
 	server := &Server{
 		router:             echoEcho,
