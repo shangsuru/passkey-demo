@@ -28,7 +28,7 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Password must be at least 8 characters", http.StatusBadRequest)
 		}
 
-		user, err := pc.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
+		_, err := pc.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
 		if err == nil {
 			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
 		}
@@ -38,7 +38,7 @@ func (pc PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
-		_, err = pc.UserRepository.CreateUser(ctx.Request().Context(), email, passwordHash)
+		user, err := pc.UserRepository.CreateUser(ctx.Request().Context(), email, passwordHash)
 		if err != nil {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}

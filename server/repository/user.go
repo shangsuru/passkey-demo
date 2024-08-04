@@ -50,11 +50,12 @@ func (ur *UserRepository) FindUserByID(ctx context.Context, rawUserID []byte) (*
 
 func (ur *UserRepository) CreateUser(ctx context.Context, email string, passwordHash string) (*model.User, error) {
 	user := &model.User{
+		ID:           uuid.New(),
 		Email:        email,
 		PasswordHash: passwordHash,
 	}
 
-	_, err := ur.DB.NewInsert().Model(user).Column("email", "password_hash").Returning("*").Exec(ctx, user)
+	_, err := ur.DB.NewInsert().Model(user).Column("id", "email", "password_hash").Returning("*").Exec(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +70,7 @@ func (ur *UserRepository) DeleteUser(ctx context.Context, user *model.User) erro
 
 func (ur *UserRepository) AddWebauthnCredential(ctx context.Context, userID uuid.UUID, credential *webauthn.Credential) error {
 	newWebauthnCredential := &model.WebauthnCredentials{
+		ID:              uuid.New(),
 		UserID:          userID,
 		CredentialID:    credential.ID,
 		PublicKey:       credential.PublicKey,
@@ -80,7 +82,7 @@ func (ur *UserRepository) AddWebauthnCredential(ctx context.Context, userID uuid
 
 	_, err := ur.DB.NewInsert().
 		Model(newWebauthnCredential).
-		Column("user_id", "credential_id", "public_key", "attestation_type", "transport", "flags", "authenticator").
+		Column("id", "user_id", "credential_id", "public_key", "attestation_type", "transport", "flags", "authenticator").
 		Exec(ctx)
 	if err != nil {
 		return err

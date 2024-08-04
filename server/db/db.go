@@ -1,13 +1,17 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
 
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/dialect/sqlitedialect"
+	"github.com/uptrace/bun/migrate"
 )
 
 func GetDB() *bun.DB {
@@ -20,10 +24,36 @@ func GetDB() *bun.DB {
 		os.Getenv("DB_NAME"),
 	)
 
-	sqldb, err := sql.Open("postgres", dbString)
+	db, err := sql.Open("postgres", dbString)
 	if err != nil {
 		panic(err)
 	}
 
-	return bun.NewDB(sqldb, pgdialect.New())
+	return bun.NewDB(db, pgdialect.New())
+}
+
+func GetTestDB() *bun.DB {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		panic(err)
+	}
+
+	testDB := bun.NewDB(db, sqlitedialect.New())
+
+	// Run migrations
+	ctx := context.Background()
+	migrations := migrate.NewMigrations()
+	if err = migrations.DiscoverCaller(); err != nil {
+		panic(err)
+	}
+	migrator := migrate.NewMigrator(testDB, migrations)
+	if err = migrator.Init(ctx); err != nil {
+		panic(err)
+	}
+	_, err = migrator.Migrate(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return testDB
 }

@@ -75,7 +75,7 @@ func (sr *SessionRepository) CreateWebauthnSession(ctx echo.Context, sessionName
 
 func (sr *SessionRepository) Login(ctx echo.Context, userID uuid.UUID) error {
 	sessionID := random.String(20)
-	if err := sr.redisClient.Set(ctx.Request().Context(), sessionID, userID, sessionDuration).Err(); err != nil {
+	if err := sr.redisClient.Set(ctx.Request().Context(), sessionID, userID.String(), sessionDuration).Err(); err != nil {
 		return err
 	}
 
