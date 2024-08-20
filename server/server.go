@@ -41,5 +41,6 @@ func (s *Server) registerEndpoints() {
 	s.router.FileFS("/", "index.html", distIndexHtml)
 	s.router.FileFS("/sign-up", "index.html", distIndexHtml)
 	s.router.FileFS("/home", "index.html", distIndexHtml)
+	s.router.FileFS("/passkeys", "index.html", distIndexHtml)
 	s.router.StaticFS("/", distDirFS)
 }

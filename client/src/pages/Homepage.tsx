@@ -10,7 +10,7 @@ const MenuItems = [
   { title: "Change email address", link: "#" },
   { title: "Change password", link: "#" },
   { title: "Set up Two-Step Authentication", link: "#" },
-  { title: "Manage Passkeys", link: "#" },
+  { title: "Manage Passkeys", link: "/passkeys" },
   { title: "Delete Account", link: "#" }
 ];
 
