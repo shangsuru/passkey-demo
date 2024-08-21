@@ -1,21 +1,11 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Layout } from "../components/layout/Layout";
-import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../utils/shared.ts";
 import { LinkButton } from "../components/input/LinkButton.tsx";
 import { Button } from "../components/input/Button.tsx";
 import { Heading } from "../components/layout/Heading.tsx";
 import { HorizontalLine } from "../components/layout/HorizontalLine.tsx";
 
 export default function ManagePasskeys(): React.ReactElement {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/");
-    }
-  }, []);
-
   const registeredPasskeys = [
     {
       name: "Chrome on Mac",

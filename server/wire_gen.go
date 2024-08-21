@@ -33,8 +33,7 @@ func NewServer() (*Server, error) {
 		SessionRepository: sessionRepository,
 	}
 	passwordController := handler.PasswordController{
-		UserRepository:    userRepository,
-		SessionRepository: sessionRepository,
+		UserRepository: userRepository,
 	}
 	server := &Server{
 		router:             echoEcho,
