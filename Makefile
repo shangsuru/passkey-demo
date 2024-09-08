@@ -12,8 +12,8 @@ run:
 	set -m 
 # Spin up postgres and redis using docker
 	docker compose up -d
-# Generate frontend
-	cd client && yarn dev & 
+# Generate frontend and watch for changes
+	cd client && yarn watch &
 # Start the server and watch for changes
 	cd server && air
 
