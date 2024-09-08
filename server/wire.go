@@ -21,7 +21,7 @@ func NewServer() (*Server, error) {
 		wire.Struct(new(handler.PasswordController), "*"),
 		wire.Struct(new(repository.UserRepository), "*"),
 		db.GetDB,
-		repository.NewSessionRepository,
-		repository.NewWebAuthnAPI,
+		handler.NewSessionRepository,
+		handler.NewWebAuthnAPI,
 	))
 }

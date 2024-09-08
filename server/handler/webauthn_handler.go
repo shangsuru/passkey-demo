@@ -13,7 +13,7 @@ import (
 type WebAuthnController struct {
 	UserRepository    repository.UserRepository
 	WebAuthnAPI       *webauthn.WebAuthn
-	SessionRepository repository.SessionRepository
+	SessionRepository SessionRepository
 }
 
 func (handler WebAuthnController) BeginRegistration() echo.HandlerFunc {
@@ -32,7 +32,7 @@ func (handler WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
 		}
 
-		// create a random password to fulfill not null constraint in user.go
+		// create a random password to fulfill not null constraint in user_repository.go
 		passwordHash, err := argon2id.CreateHash(random.String(20), argon2id.DefaultParams)
 		if err != nil {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
@@ -104,6 +104,11 @@ func (handler WebAuthnController) FinishRegistration() echo.HandlerFunc {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
+		if err = createSession(ctx, user.ID.String()); err != nil {
+			_ = handler.UserRepository.DeleteUser(ctx.Request().Context(), user)
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
 		return sendOK(ctx)
 	}
 }
@@ -169,6 +174,8 @@ func (handler WebAuthnController) assertionResult(getCredential func(ctx echo.Co
 		if err = handler.SessionRepository.Login(ctx, *userID); err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
+
+		createSession(ctx, (*userID).String())
 
 		return sendOK(ctx)
 	}

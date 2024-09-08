@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/shangsuru/passkey-demo/repository"
 	"net/http"
 
@@ -44,7 +42,7 @@ func (handler PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
-		if err = handler.createSession(ctx, user.ID.String()); err != nil {
+		if err = createSession(ctx, user.ID.String()); err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -77,7 +75,7 @@ func (handler PasswordController) Login() echo.HandlerFunc {
 			return sendError(ctx, "Invalid password.", http.StatusUnauthorized)
 		}
 
-		if err = handler.createSession(ctx, user.ID.String()); err != nil {
+		if err = createSession(ctx, user.ID.String()); err != nil {
 			return sendError(ctx, "Session could not be created", http.StatusInternalServerError)
 		}
 
@@ -87,33 +85,9 @@ func (handler PasswordController) Login() echo.HandlerFunc {
 
 func (handler PasswordController) Logout() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		if err := handler.terminateSession(ctx); err != nil {
+		if err := terminateSession(ctx); err != nil {
 			return sendError(ctx, "Not logged in.", http.StatusUnauthorized)
 		}
 		return sendOK(ctx)
 	}
-}
-
-func (handler PasswordController) createSession(ctx echo.Context, userId string) error {
-	sess, err := session.Get("auth", ctx)
-	if err != nil {
-		return err
-	}
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   24 * 60 * 60,
-		HttpOnly: true,
-	}
-	sess.Values["user"] = userId
-	return sess.Save(ctx.Request(), ctx.Response())
-}
-
-func (handler PasswordController) terminateSession(ctx echo.Context) error {
-	sess, err := session.Get("auth", ctx)
-	if err != nil {
-		return err
-	}
-
-	sess.Values["user"] = nil // Revoke users authentication
-	return sess.Save(ctx.Request(), ctx.Response())
 }

@@ -1,4 +1,4 @@
-package repository
+package handler
 
 import (
 	"context"
@@ -80,7 +80,7 @@ func (sr *SessionRepository) Login(ctx echo.Context, userID uuid.UUID) error {
 	}
 
 	ctx.SetCookie(&http.Cookie{
-		Name:  "auth",
+		Name:  "webauthn",
 		Value: sessionID,
 		Path:  "/",
 	})

@@ -22,11 +22,11 @@ func NewServer() (*Server, error) {
 	userRepository := repository.UserRepository{
 		DB: bunDB,
 	}
-	webAuthn, err := repository.NewWebAuthnAPI()
+	webAuthn, err := handler.NewWebAuthnAPI()
 	if err != nil {
 		return nil, err
 	}
-	sessionRepository := repository.NewSessionRepository()
+	sessionRepository := handler.NewSessionRepository()
 	webAuthnController := handler.WebAuthnController{
 		UserRepository:    userRepository,
 		WebAuthnAPI:       webAuthn,
