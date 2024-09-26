@@ -99,11 +99,6 @@ func (handler WebAuthnController) FinishRegistration() echo.HandlerFunc {
 
 		_ = handler.SessionRepository.DeleteSession(ctx.Request().Context(), sessionID)
 
-		if err = handler.SessionRepository.Login(ctx, user.ID); err != nil {
-			_ = handler.UserRepository.DeleteUser(ctx.Request().Context(), user)
-			return sendError(ctx, err.Error(), http.StatusInternalServerError)
-		}
-
 		if err = createSession(ctx, user.ID.String()); err != nil {
 			_ = handler.UserRepository.DeleteUser(ctx.Request().Context(), user)
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
@@ -171,11 +166,9 @@ func (handler WebAuthnController) assertionResult(getCredential func(ctx echo.Co
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
 
-		if err = handler.SessionRepository.Login(ctx, *userID); err != nil {
+		if err = createSession(ctx, (*userID).String()); err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
-
-		createSession(ctx, (*userID).String())
 
 		return sendOK(ctx)
 	}

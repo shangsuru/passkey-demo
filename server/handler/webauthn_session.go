@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/labstack/gommon/random"
 	"net/http"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 )
 
 const webauthnSessionDuration = 5 * time.Minute
-const sessionDuration = 30 * 24 * time.Hour
 
 type SessionRepository struct {
 	redisClient *redis.Client
@@ -71,24 +69,6 @@ func (sr *SessionRepository) CreateWebauthnSession(ctx echo.Context, sessionName
 	})
 
 	return nil
-}
-
-func (sr *SessionRepository) Login(ctx echo.Context, userID uuid.UUID) error {
-	sessionID := random.String(20)
-	if err := sr.redisClient.Set(ctx.Request().Context(), sessionID, userID.String(), sessionDuration).Err(); err != nil {
-		return err
-	}
-
-	ctx.SetCookie(&http.Cookie{
-		Name:  "webauthn",
-		Value: sessionID,
-		Path:  "/",
-	})
-	return nil
-}
-
-func (sr *SessionRepository) Logout(ctx context.Context, sessionID string) {
-	_ = sr.DeleteSession(ctx, sessionID)
 }
 
 func (sr *SessionRepository) DeleteSession(ctx context.Context, id string) error {
