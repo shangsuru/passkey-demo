@@ -2,8 +2,12 @@ package main
 
 import (
 	"embed"
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/shangsuru/passkey-demo/handler"
+	"github.com/shangsuru/passkey-demo/middleware"
+	"os"
 )
 
 type Server struct {
@@ -13,6 +17,8 @@ type Server struct {
 }
 
 func (s *Server) Start() {
+
+	s.router.Use(session.Middleware(sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))))
 	s.registerEndpoints()
 	s.router.Logger.Fatal(s.router.Start(":9044"))
 }
@@ -40,6 +46,7 @@ func (s *Server) registerEndpoints() {
 
 	s.router.FileFS("/", "index.html", distIndexHtml)
 	s.router.FileFS("/sign-up", "index.html", distIndexHtml)
-	s.router.FileFS("/home", "index.html", distIndexHtml)
+	s.router.FileFS("/home", "index.html", distIndexHtml, middleware.Auth)
+	s.router.FileFS("/passkeys", "index.html", distIndexHtml, middleware.Auth)
 	s.router.StaticFS("/", distDirFS)
 }

@@ -4,4 +4,6 @@ client/node_modules
 server/dist
 server/tmp
 client/dist
+tmp/
+.tool-versions
 .idea

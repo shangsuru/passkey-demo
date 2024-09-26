@@ -34,7 +34,6 @@ export function PasskeySignUp(): React.ReactElement {
       const credentialCreationOptions: {
         publicKey: PublicKeyCredentialCreationOptionsJSON
       } & AuthResponse = await response.json();
-      console.log({ credentialCreationOptions });
       if (credentialCreationOptions.status === "error") {
         setNotification(credentialCreationOptions.errorMessage);
         return;

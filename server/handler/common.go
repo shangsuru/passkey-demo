@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"net/http"
 	"net/mail"
 
@@ -34,4 +36,28 @@ func sendOK(ctx echo.Context) error {
 func validEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
+}
+
+func createSession(ctx echo.Context, userId string) error {
+	sess, err := session.Get("auth", ctx)
+	if err != nil {
+		return err
+	}
+	sess.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   24 * 60 * 60,
+		HttpOnly: true,
+	}
+	sess.Values["user"] = userId
+	return sess.Save(ctx.Request(), ctx.Response())
+}
+
+func terminateSession(ctx echo.Context) error {
+	sess, err := session.Get("auth", ctx)
+	if err != nil {
+		return err
+	}
+
+	sess.Values["user"] = nil // Revoke users authentication
+	return sess.Save(ctx.Request(), ctx.Response())
 }
