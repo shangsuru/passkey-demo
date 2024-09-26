@@ -6,3 +6,4 @@ server/tmp
 client/dist
 tmp/
 .tool-versions
+.idea
