@@ -15,30 +15,30 @@ import (
 
 const webauthnSessionDuration = 5 * time.Minute
 
-type SessionRepository struct {
+type WebAuthnSession struct {
 	redisClient *redis.Client
 }
 
-func NewSessionRepository() SessionRepository {
+func NewWebAuthnSession() WebAuthnSession {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:16379",
 		Password: "",
 		DB:       0,
 	})
 
-	return SessionRepository{
+	return WebAuthnSession{
 		redisClient: redisClient,
 	}
 }
 
-func (sr *SessionRepository) GetWebauthnSession(ctx echo.Context, sessionName string) (string, *webauthn.SessionData, error) {
+func (ws *WebAuthnSession) Get(ctx echo.Context, sessionName string) (string, *webauthn.SessionData, error) {
 	cookie, err := ctx.Cookie(sessionName)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get session cookie: %v", err)
 	}
 	id := cookie.Value
 
-	bytes, err := sr.redisClient.Get(ctx.Request().Context(), id).Bytes()
+	bytes, err := ws.redisClient.Get(ctx.Request().Context(), id).Bytes()
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get session: %v", err)
 	}
@@ -51,14 +51,14 @@ func (sr *SessionRepository) GetWebauthnSession(ctx echo.Context, sessionName st
 	return id, data, nil
 }
 
-func (sr *SessionRepository) CreateWebauthnSession(ctx echo.Context, sessionName string, data *webauthn.SessionData) error {
+func (ws *WebAuthnSession) Create(ctx echo.Context, sessionName string, data *webauthn.SessionData) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to encode session data: %v", err)
 	}
 
 	id := uuid.New().String()
-	if err := sr.redisClient.Set(ctx.Request().Context(), id, bytes, webauthnSessionDuration).Err(); err != nil {
+	if err := ws.redisClient.Set(ctx.Request().Context(), id, bytes, webauthnSessionDuration).Err(); err != nil {
 		return fmt.Errorf("failed to save session: %v", err)
 	}
 
@@ -71,8 +71,8 @@ func (sr *SessionRepository) CreateWebauthnSession(ctx echo.Context, sessionName
 	return nil
 }
 
-func (sr *SessionRepository) DeleteSession(ctx context.Context, id string) error {
-	if err := sr.redisClient.Del(ctx, id).Err(); err != nil {
+func (ws *WebAuthnSession) Delete(ctx context.Context, id string) error {
+	if err := ws.redisClient.Del(ctx, id).Err(); err != nil {
 		return fmt.Errorf("failed to delete session: %v", err)
 	}
 
