@@ -109,24 +109,8 @@ func (handler WebAuthnController) FinishRegistration() echo.HandlerFunc {
 }
 
 func (handler WebAuthnController) BeginLogin() echo.HandlerFunc {
-	return handler.assertionOptions(handler.getCredentialAssertion)
-}
-
-func (handler WebAuthnController) FinishLogin() echo.HandlerFunc {
-	return handler.assertionResult(handler.getCredential)
-}
-
-func (handler WebAuthnController) BeginDiscoverableLogin() echo.HandlerFunc {
-	return handler.assertionOptions(handler.getDiscoverableCredentialAssertion)
-}
-
-func (handler WebAuthnController) FinishDiscoverableLogin() echo.HandlerFunc {
-	return handler.assertionResult(handler.getDiscoverableCredential)
-}
-
-func (handler WebAuthnController) assertionOptions(getCredentialAssertion func(ctx echo.Context) (*protocol.CredentialAssertion, *webauthn.SessionData, error)) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		options, sessionData, err := getCredentialAssertion(ctx)
+		options, sessionData, err := handler.getCredentialAssertion(ctx)
 		if err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
@@ -139,14 +123,64 @@ func (handler WebAuthnController) assertionOptions(getCredentialAssertion func(c
 	}
 }
 
-func (handler WebAuthnController) assertionResult(getCredential func(ctx echo.Context, sessionData *webauthn.SessionData) (*webauthn.Credential, error)) echo.HandlerFunc {
+func (handler WebAuthnController) FinishLogin() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		sessionID, sessionData, err := handler.WebAuthnSession.Get(ctx, "login")
 		if err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
 
-		credential, err := getCredential(ctx, sessionData)
+		credential, err := handler.getCredential(ctx, sessionData)
+		if err != nil {
+			return sendError(ctx, "There is no passkey associated with this account.", http.StatusNotFound)
+		}
+
+		if !credential.Flags.UserPresent || !credential.Flags.UserVerified {
+			return sendError(ctx, "User not present or not verified.", http.StatusBadRequest)
+		}
+
+		if credential.Authenticator.CloneWarning {
+			return sendError(ctx, "Authenticator is cloned.", http.StatusBadRequest)
+		}
+
+		_ = handler.WebAuthnSession.Delete(ctx.Request().Context(), sessionID)
+
+		userID, err := handler.UserRepository.FindUserIDByCredentialID(ctx.Request().Context(), credential.ID)
+		if err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		if err = createSession(ctx, (*userID).String()); err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		return sendOK(ctx)
+	}
+}
+
+func (handler WebAuthnController) BeginDiscoverableLogin() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		options, sessionData, err := handler.getDiscoverableCredentialAssertion()
+		if err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		if err := handler.WebAuthnSession.Create(ctx, "login", sessionData); err != nil {
+			return sendError(ctx, err.Error(), http.StatusInternalServerError)
+		}
+
+		return ctx.JSON(http.StatusOK, options)
+	}
+}
+
+func (handler WebAuthnController) FinishDiscoverableLogin() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		sessionID, sessionData, err := handler.WebAuthnSession.Get(ctx, "login")
+		if err != nil {
+			return sendError(ctx, err.Error(), http.StatusBadRequest)
+		}
+
+		credential, err := handler.getDiscoverableCredential(ctx, sessionData)
 		if err != nil {
 			return sendError(ctx, "There is no passkey associated with this account.", http.StatusNotFound)
 		}
@@ -197,7 +231,7 @@ func (handler WebAuthnController) getCredentialAssertion(ctx echo.Context) (*pro
 	return options, sessionData, nil
 }
 
-func (handler WebAuthnController) getDiscoverableCredentialAssertion(echo.Context) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
+func (handler WebAuthnController) getDiscoverableCredentialAssertion() (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
 	options, sessionData, err := handler.WebAuthnAPI.BeginDiscoverableLogin(webauthn.WithUserVerification(protocol.VerificationRequired))
 	return options, sessionData, err
 }
