@@ -1,6 +1,9 @@
 # Passkey Demo
 
-An implementation of authentication with passkeys using the [go-webauthn](https://github.com/go-webauthn/webauthn) library
+An implementation of authentication with passkeys using the [go-webauthn](https://github.com/go-webauthn/webauthn)
+library
+
+![Passkey Demo](./passkey-demo.png)
 
 ## Local Development
 
