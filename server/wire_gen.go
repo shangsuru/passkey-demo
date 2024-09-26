@@ -30,7 +30,7 @@ func NewServer() (*Server, error) {
 	webAuthnController := handler.WebAuthnController{
 		UserRepository:  userRepository,
 		WebAuthnAPI:     webAuthn,
-		WebauthnSession: webAuthnSession,
+		WebAuthnSession: webAuthnSession,
 	}
 	passwordController := handler.PasswordController{
 		UserRepository: userRepository,
