@@ -5,7 +5,7 @@ import { Button } from "../components/input/Button.tsx";
 
 const MenuItems = [
   { title: "Manage Passkeys", link: "/passkeys" },
-  { title: "Delete Account", link: "#" },
+  { title: "Delete Account", link: "/delete_account" },
 ];
 
 export default function Homepage(): React.ReactElement {
