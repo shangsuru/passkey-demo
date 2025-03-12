@@ -1,6 +1,7 @@
 import React from "react";
 import { Layout } from "../components/layout/Layout";
 import { Button } from "../components/input/Button.tsx";
+import { Link } from "../components/input/Link.tsx";
 
 export default function DeleteAccount(): React.ReactElement {
   return (
@@ -14,6 +15,7 @@ export default function DeleteAccount(): React.ReactElement {
         onClickFunc={() => alert("Not yet implemented")}
         buttonText="Delete"
       />
+      <Link href="/home" linkText="Back" />
     </Layout>
   );
 }

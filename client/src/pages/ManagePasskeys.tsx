@@ -3,6 +3,7 @@ import { Layout } from "../components/layout/Layout";
 import { LinkButton } from "../components/input/LinkButton.tsx";
 import { Button } from "../components/input/Button.tsx";
 import { HorizontalLine } from "../components/layout/HorizontalLine.tsx";
+import { Link } from "../components/input/Link.tsx";
 
 export default function ManagePasskeys(): React.ReactElement {
   const registeredPasskeys = [
@@ -48,6 +49,7 @@ export default function ManagePasskeys(): React.ReactElement {
           <HorizontalLine />
         </div>
       ))}
+      <Link href="/home" linkText="Back" />
     </Layout>
   );
 }
