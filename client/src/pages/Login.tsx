@@ -7,7 +7,7 @@ import { PasskeyLogin } from "../components/form/PasskeyLogin";
 
 export default function Login(): React.ReactElement {
   return (
-    <Layout>
+    <Layout title="Sign in">
       <PasswordLogin />
       <Divider />
       <PasskeyLogin />

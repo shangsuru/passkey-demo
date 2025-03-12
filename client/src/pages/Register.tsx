@@ -7,7 +7,7 @@ import { PasskeySignUp } from "../components/form/PasskeySignUp";
 
 export default function Register(): React.ReactElement {
   return (
-    <Layout>
+    <Layout title="Sign up">
       <PasswordSignUp />
       <Divider />
       <PasskeySignUp />
