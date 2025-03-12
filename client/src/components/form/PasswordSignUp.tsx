@@ -1,20 +1,19 @@
 import React, { useState } from "react";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
-import { isValidEmail } from "../../utils/shared.ts";
 import { AuthResponse } from "../../utils/types.ts";
 import { useNavigate } from "react-router-dom";
 
 export function PasswordSignUp(): React.ReactElement {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [notification, setNotification] = useState("");
 
   const navigate = useNavigate();
 
   async function registerUser() {
-    if (email === "" || !isValidEmail(email)) {
-      setNotification("Please enter your email.");
+    if (!username) {
+      setNotification("Please enter your username.");
       return;
     }
 
@@ -25,10 +24,10 @@ export function PasswordSignUp(): React.ReactElement {
 
     const response = await fetch(`/register/password`, {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     const registrationJSON: AuthResponse = await response.json();
     if (registrationJSON.status === "ok") {
@@ -47,12 +46,7 @@ export function PasswordSignUp(): React.ReactElement {
         <div className="text-sm text-center min-h-5 font-normal text-blue-400">
           {notification}
         </div>
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={setEmail}
-        />
+        <Input placeholder="Username" value={username} onChange={setUsername} />
         <Input
           type="password"
           placeholder="Password"

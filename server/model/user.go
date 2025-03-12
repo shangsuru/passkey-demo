@@ -10,7 +10,7 @@ import (
 
 type User struct {
 	ID                  uuid.UUID             `json:"id" bun:"id,pk"`
-	Email               string                `json:"email" bun:"email"`
+	Username            string                `json:"username" bun:"username"`
 	WebauthnCredentials []WebauthnCredentials `json:"webauthn_credentials" bun:"rel:has-many,join:id=user_id"`
 	PasswordHash        string                `json:"-" bun:"password_hash,notnull"`
 	CreatedAt           time.Time             `json:"created_at" bun:"created_at"`
@@ -23,11 +23,11 @@ func (u *User) WebAuthnID() []byte {
 }
 
 func (u *User) WebAuthnName() string {
-	return u.Email
+	return u.Username
 }
 
 func (u *User) WebAuthnDisplayName() string {
-	return u.Email
+	return u.Username
 }
 
 func (u *User) WebAuthnIcon() string {

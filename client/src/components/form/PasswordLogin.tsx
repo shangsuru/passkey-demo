@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
+import {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+} from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
 import { AuthResponse } from "../../utils/types.ts";
 import { useNavigate } from "react-router-dom";
 
 export function PasswordLogin(): React.ReactElement {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [notification, setNotification] = useState("");
 
@@ -18,22 +21,22 @@ export function PasswordLogin(): React.ReactElement {
   }, []);
 
   async function loginUser() {
-    if (email === "") {
-      setNotification("Please enter your email.");
+    if (!username) {
+      setNotification("Please enter your username.");
       return;
     }
 
-    if (password === "") {
+    if (!password) {
       setNotification("Please enter your password.");
       return;
     }
 
     const response = await fetch(`/login/password`, {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     const loginJSON: AuthResponse = await response.json();
     if (loginJSON.status === "ok") {
@@ -46,12 +49,14 @@ export function PasswordLogin(): React.ReactElement {
   async function passkeyAutofill() {
     const response = await fetch(`/discoverable_login/begin`, {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ username }),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
-    const credentialRequestOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON } = await response.json();
+    const credentialRequestOptions: {
+      publicKey: PublicKeyCredentialCreationOptionsJSON;
+    } = await response.json();
     let assertion: AuthenticationResponseJSON;
     try {
       assertion = await startAuthentication(
@@ -62,7 +67,7 @@ export function PasswordLogin(): React.ReactElement {
       if (error instanceof Error) {
         switch (error.name) {
           case "TypeError":
-            setNotification("An account with that email does not exist.");
+            setNotification("An account with that username does not exist.");
             break;
           case "AbortError":
             break;
@@ -77,8 +82,8 @@ export function PasswordLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify(assertion),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     const verificationJSON: AuthResponse = await verificationResponse.json();
@@ -99,13 +104,14 @@ export function PasswordLogin(): React.ReactElement {
           {notification}
         </div>
         <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={setEmail}
+          placeholder="Username"
+          autoComplete="webauthn"
+          value={username}
+          onChange={setUsername}
         />
         <Input
           type="password"
+          autoComplete="current-password"
           placeholder="Password"
           value={password}
           onChange={setPassword}

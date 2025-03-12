@@ -1,32 +1,36 @@
 import React, { useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/types";
+import {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+} from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
-import { isValidEmail } from "../../utils/shared.ts";
 import { AuthResponse } from "../../utils/types.ts";
 import { useNavigate } from "react-router-dom";
 
 export function PasskeyLogin(): React.ReactElement {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [notification, setNotification] = useState("");
 
   const navigate = useNavigate();
 
   async function loginUser() {
-    if (!isValidEmail(email)) {
-      setNotification("Please enter your email.");
+    if (!username) {
+      setNotification("Please enter your username.");
       return;
     }
 
     const response = await fetch(`/login/begin`, {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ username }),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
-    const credentialRequestOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON } = await response.json();
+    const credentialRequestOptions: {
+      publicKey: PublicKeyCredentialCreationOptionsJSON;
+    } = await response.json();
     let assertion: AuthenticationResponseJSON;
     try {
       assertion = await startAuthentication(credentialRequestOptions.publicKey);
@@ -34,7 +38,9 @@ export function PasskeyLogin(): React.ReactElement {
       if (error instanceof Error) {
         switch (error.name) {
           case "TypeError":
-            setNotification("There is no passkey associated with this account.");
+            setNotification(
+              "There is no passkey associated with this account."
+            );
             break;
           case "AbortError":
             break;
@@ -49,8 +55,8 @@ export function PasskeyLogin(): React.ReactElement {
       method: "POST",
       body: JSON.stringify(assertion),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
 
     const verificationJSON: AuthResponse = await verificationResponse.json();
@@ -73,10 +79,10 @@ export function PasskeyLogin(): React.ReactElement {
         </div>
 
         <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={setEmail}
+          placeholder="Username"
+          value={username}
+          autoComplete={"webauthn"}
+          onChange={setUsername}
         />
 
         <Button onClickFunc={loginUser} buttonText="Sign in" />

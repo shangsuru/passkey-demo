@@ -1,16 +1,16 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
-	"net/http"
-	"net/mail"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Params struct {
-	Email    string
+	Username string
 	Password string
 }
 
@@ -31,11 +31,6 @@ func sendOK(ctx echo.Context) error {
 		Status:       "ok",
 		ErrorMessage: "",
 	})
-}
-
-func validEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
 }
 
 func createSession(ctx echo.Context, userId string) error {

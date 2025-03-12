@@ -2,37 +2,36 @@ import React, { useState } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import {
   PublicKeyCredentialCreationOptionsJSON,
-  RegistrationResponseJSON
+  RegistrationResponseJSON,
 } from "@simplewebauthn/types";
 import { Button } from "../input/Button";
 import { Input } from "../input/Input";
-import { isValidEmail } from "../../utils/shared.ts";
 import { AuthResponse } from "../../utils/types.ts";
 import { useNavigate } from "react-router-dom";
 
 export function PasskeySignUp(): React.ReactElement {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [notification, setNotification] = useState("");
 
   const navigate = useNavigate();
 
   async function registerUser() {
-    if (email === "" || !isValidEmail(email)) {
-      setNotification("Please enter your email.");
+    if (!username) {
+      setNotification("Please enter your username.");
       return;
     }
 
     const response = await fetch(`/register/begin`, {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ username }),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     let registrationResponse: RegistrationResponseJSON;
     try {
       const credentialCreationOptions: {
-        publicKey: PublicKeyCredentialCreationOptionsJSON
+        publicKey: PublicKeyCredentialCreationOptionsJSON;
       } & AuthResponse = await response.json();
       if (credentialCreationOptions.status === "error") {
         setNotification(credentialCreationOptions.errorMessage);
@@ -50,8 +49,8 @@ export function PasskeySignUp(): React.ReactElement {
       method: "POST",
       body: JSON.stringify(registrationResponse),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     const verificationJSON: AuthResponse = await verificationResponse.json();
     if (verificationJSON.status === "ok") {
@@ -72,12 +71,7 @@ export function PasskeySignUp(): React.ReactElement {
           {notification}
         </div>
 
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={setEmail}
-        />
+        <Input placeholder="Username" value={username} onChange={setUsername} />
 
         <Button onClickFunc={registerUser} buttonText="Sign up" />
       </div>

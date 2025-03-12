@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/shangsuru/passkey-demo/model"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -13,13 +14,13 @@ type UserRepository struct {
 	DB *bun.DB
 }
 
-func (ur *UserRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
+func (ur *UserRepository) FindUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 	err := ur.DB.NewSelect().
 		Model(&user).
 		Relation("WebauthnCredentials").
 		Column("*").
-		Where("email = ?", email).
+		Where("username = ?", username).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -48,14 +49,14 @@ func (ur *UserRepository) FindUserByID(ctx context.Context, rawUserID []byte) (*
 	return &user, nil
 }
 
-func (ur *UserRepository) CreateUser(ctx context.Context, email string, passwordHash string) (*model.User, error) {
+func (ur *UserRepository) CreateUser(ctx context.Context, username string, passwordHash string) (*model.User, error) {
 	user := &model.User{
 		ID:           uuid.New(),
-		Email:        email,
+		Username:     username,
 		PasswordHash: passwordHash,
 	}
 
-	_, err := ur.DB.NewInsert().Model(user).Column("id", "email", "password_hash").Returning("*").Exec(ctx, user)
+	_, err := ur.DB.NewInsert().Model(user).Column("id", "username", "password_hash").Returning("*").Exec(ctx, user)
 	if err != nil {
 		return nil, err
 	}

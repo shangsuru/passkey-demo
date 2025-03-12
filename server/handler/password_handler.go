@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/shangsuru/passkey-demo/repository"
 	"net/http"
+
+	"github.com/shangsuru/passkey-demo/repository"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/labstack/echo/v4"
@@ -18,18 +19,18 @@ func (handler PasswordController) SignUp() echo.HandlerFunc {
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
-		email := p.Email
-		if !validEmail(email) {
-			return sendError(ctx, "Invalid email", http.StatusBadRequest)
+		username := p.Username
+		if len(username) == 0 {
+			return sendError(ctx, "Empty username", http.StatusBadRequest)
 		}
 		password := p.Password
 		if len(password) < 8 {
 			return sendError(ctx, "Password must be at least 8 characters", http.StatusBadRequest)
 		}
 
-		_, err := handler.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
+		_, err := handler.UserRepository.FindUserByUsername(ctx.Request().Context(), username)
 		if err == nil {
-			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
+			return sendError(ctx, "An account with that username already exists.", http.StatusConflict)
 		}
 
 		passwordHash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
@@ -37,7 +38,7 @@ func (handler PasswordController) SignUp() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
-		user, err := handler.UserRepository.CreateUser(ctx.Request().Context(), email, passwordHash)
+		user, err := handler.UserRepository.CreateUser(ctx.Request().Context(), username, passwordHash)
 		if err != nil {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
@@ -56,14 +57,14 @@ func (handler PasswordController) Login() echo.HandlerFunc {
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
-		email := p.Email
-		if !validEmail(email) {
-			return sendError(ctx, "Invalid email", http.StatusBadRequest)
+		username := p.Username
+		if len(username) == 0 {
+			return sendError(ctx, "Empty username", http.StatusBadRequest)
 		}
 
-		user, err := handler.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
+		user, err := handler.UserRepository.FindUserByUsername(ctx.Request().Context(), username)
 		if err != nil {
-			return sendError(ctx, "An account with that email does not exist.", http.StatusNotFound)
+			return sendError(ctx, "An account with that username does not exist.", http.StatusNotFound)
 		}
 
 		match, err := argon2id.ComparePasswordAndHash(p.Password, user.PasswordHash)

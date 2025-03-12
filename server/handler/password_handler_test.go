@@ -2,6 +2,12 @@ package handler
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/alexedwards/argon2id"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -11,11 +17,6 @@ import (
 	"github.com/shangsuru/passkey-demo/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"strings"
-	"testing"
 )
 
 var (
@@ -45,7 +46,7 @@ func loadFixtures() {
 	password := "password123"
 	passwordHash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
 	_, err = database.NewInsert().Model(&model.User{
-		Email:        "existing@email.com",
+		Username:     "existing_user",
 		PasswordHash: passwordHash,
 	}).Exec(context.Background())
 	if err != nil {
@@ -61,19 +62,19 @@ func TestMain(m *testing.M) {
 }
 
 func TestPasswordController_SignUp(t *testing.T) {
-	t.Run("invalid email", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"email":"invalid","password":"password123"}`))
+	t.Run("invalid username", func(t *testing.T) {
+		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"username":"","password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
 
 		assert.NoError(t, passwordController.SignUp()(ctx))
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.JSONEq(t, `{"status": "error", "errorMessage":"Invalid email"}`, rec.Body.String())
+		assert.JSONEq(t, `{"status": "error", "errorMessage":"Empty username"}`, rec.Body.String())
 	})
 
 	t.Run("password too short", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"email":"test@email.com", "password":"short"}`))
+		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"username":"user123", "password":"short"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
@@ -84,18 +85,18 @@ func TestPasswordController_SignUp(t *testing.T) {
 	})
 
 	t.Run("account already exists", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"email":"existing@email.com", "password":"password123"}`))
+		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"username":"existing_user", "password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
 
 		assert.NoError(t, passwordController.SignUp()(ctx))
 		assert.Equal(t, http.StatusConflict, rec.Code)
-		assert.JSONEq(t, `{"status": "error", "errorMessage":"An account with that email already exists."}`, rec.Body.String())
+		assert.JSONEq(t, `{"status": "error", "errorMessage":"An account with that username already exists."}`, rec.Body.String())
 	})
 
 	t.Run("successful sign up", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"email":"new@email.com", "password":"password123"}`))
+		req := httptest.NewRequest(echo.POST, "/signup", strings.NewReader(`{"username":"new_user", "password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
@@ -105,7 +106,7 @@ func TestPasswordController_SignUp(t *testing.T) {
 		assert.JSONEq(t, `{"status": "ok", "errorMessage":""}`, rec.Body.String())
 
 		// Creates the user in the user repository
-		user, err := userRepository.FindUserByEmail(ctx.Request().Context(), "new@email.com")
+		user, err := userRepository.FindUserByUsername(ctx.Request().Context(), "new_user")
 		if err != nil {
 			t.Error(err)
 		}
@@ -123,30 +124,30 @@ func TestPasswordController_SignUp(t *testing.T) {
 }
 
 func TestPasswordController_Login(t *testing.T) {
-	t.Run("invalid email", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"email":"invalid","password":"password123"}`))
+	t.Run("invalid username", func(t *testing.T) {
+		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"username":"","password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
 
 		assert.NoError(t, passwordController.Login()(ctx))
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.JSONEq(t, `{"status": "error", "errorMessage":"Invalid email"}`, rec.Body.String())
+		assert.JSONEq(t, `{"status": "error", "errorMessage":"Empty username"}`, rec.Body.String())
 	})
 
 	t.Run("account does not exist", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"email":"notexisting@email.com", "password":"password123"}`))
+		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"username":"notexisting_user", "password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
 
 		assert.NoError(t, passwordController.Login()(ctx))
 		assert.Equal(t, http.StatusNotFound, rec.Code)
-		assert.JSONEq(t, `{"status": "error", "errorMessage":"An account with that email does not exist."}`, rec.Body.String())
+		assert.JSONEq(t, `{"status": "error", "errorMessage":"An account with that username does not exist."}`, rec.Body.String())
 	})
 
 	t.Run("incorrect password", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"email":"existing@email.com", "password":"wrongPassword"}`))
+		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"username":"existing_user", "password":"wrongPassword"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
@@ -157,7 +158,7 @@ func TestPasswordController_Login(t *testing.T) {
 	})
 
 	t.Run("successful login", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"email":"existing@email.com", "password":"password123"}`))
+		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"username":"existing_user", "password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
@@ -193,7 +194,7 @@ func TestPasswordController_Logout(t *testing.T) {
 	})
 
 	t.Run("successful logout", func(t *testing.T) {
-		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"email":"existing@email.com", "password":"password123"}`))
+		req := httptest.NewRequest(echo.POST, "/login", strings.NewReader(`{"username":"existing_user", "password":"password123"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)

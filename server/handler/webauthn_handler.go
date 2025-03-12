@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/alexedwards/argon2id"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/random"
 	"github.com/shangsuru/passkey-demo/repository"
-	"net/http"
 )
 
 type WebAuthnController struct {
@@ -22,14 +23,14 @@ func (handler WebAuthnController) BeginRegistration() echo.HandlerFunc {
 		if err := ctx.Bind(&p); err != nil {
 			return sendError(ctx, err.Error(), http.StatusBadRequest)
 		}
-		email := p.Email
-		if !validEmail(email) {
-			return sendError(ctx, "Invalid email.", http.StatusBadRequest)
+		username := p.Username
+		if len(username) == 0 {
+			return sendError(ctx, "Empty username", http.StatusBadRequest)
 		}
 
-		_, err := handler.UserRepository.FindUserByEmail(ctx.Request().Context(), email)
+		_, err := handler.UserRepository.FindUserByUsername(ctx.Request().Context(), username)
 		if err == nil {
-			return sendError(ctx, "An account with that email already exists.", http.StatusConflict)
+			return sendError(ctx, "An account with that username already exists.", http.StatusConflict)
 		}
 
 		// create a random password to fulfill not null constraint in user_repository.go
@@ -38,7 +39,7 @@ func (handler WebAuthnController) BeginRegistration() echo.HandlerFunc {
 			return sendError(ctx, "Internal server error", http.StatusInternalServerError)
 		}
 
-		user, err := handler.UserRepository.CreateUser(ctx.Request().Context(), email, passwordHash)
+		user, err := handler.UserRepository.CreateUser(ctx.Request().Context(), username, passwordHash)
 		if err != nil {
 			return sendError(ctx, err.Error(), http.StatusInternalServerError)
 		}
@@ -214,7 +215,7 @@ func (handler WebAuthnController) getCredentialAssertion(ctx echo.Context) (*pro
 		return nil, nil, err
 	}
 
-	user, err := handler.UserRepository.FindUserByEmail(ctx.Request().Context(), p.Email)
+	user, err := handler.UserRepository.FindUserByUsername(ctx.Request().Context(), p.Username)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -17,6 +17,7 @@ run:
 # Start the server and watch for changes
 	cd server && air
 
-dump-db:
+delete:
 	docker compose down
 	rm -rf ./server/db/data/**
+	rm -rf ./server/tmp/**
